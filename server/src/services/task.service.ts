@@ -123,8 +123,8 @@ export async function createTask(data: CreateTaskData, createdBy: number) {
       assigneeId: data.assigneeId,
       status: data.status || 'BACKLOG',
       priority: data.priority || 'MEDIUM',
-      startDate: data.startDate ? new Date(data.startDate) : undefined,
-      dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
+      startDate: data.startDate ? new Date(data.startDate) : new Date(),
+      dueDate: data.dueDate ? new Date(data.dueDate) : new Date(),
       createdBy,
       testTypes: data.testTypes
         ? {
