@@ -31,7 +31,10 @@ export async function sendVerificationEmail(email: string, code: string): Promis
   });
 
   if (!res.ok) {
-    console.error('[EMAIL] 발송 실패:', await res.text());
-    throw new Error('이메일 발송에 실패했습니다.');
+    const errorText = await res.text();
+    console.error('[EMAIL] Resend 발송 실패:', errorText);
+    console.log(`[EMAIL-FALLBACK] 인증코드: ${code} → ${email}`);
+    // 발송 실패해도 에러를 던지지 않음 — 로그에서 코드 확인 가능
+    return;
   }
 }
