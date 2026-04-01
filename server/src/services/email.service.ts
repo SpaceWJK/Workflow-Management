@@ -18,7 +18,7 @@ export async function sendVerificationEmail(email: string, code: string): Promis
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: process.env.EMAIL_FROM || 'QA Workflow <noreply@resend.dev>',
+      from: process.env.EMAIL_FROM || 'QA Workflow <onboarding@resend.dev>',
       to: email,
       subject: '[QA Workflow] 이메일 인증 코드',
       html: `<div style="font-family: sans-serif; padding: 20px;">
