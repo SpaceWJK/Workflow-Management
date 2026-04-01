@@ -102,7 +102,7 @@ function CodeInput({
           onChange={(e) => handleChange(i, e.target.value)}
           onKeyDown={(e) => handleKeyDown(i, e)}
           onPaste={i === 0 ? handlePaste : undefined}
-          className="w-10 h-12 text-center text-lg font-mono rounded-lg border-none outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+          className="w-10 h-12 text-center text-lg font-mono rounded-lg border border-slate-600 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
           style={{ backgroundColor: 'var(--color-bg)', color: 'var(--color-text)' }}
         />
       ))}
@@ -321,7 +321,7 @@ function SignupForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
                 <button
                   type="button"
                   onClick={() => { setStep(1); setCode(''); setError(''); }}
-                  className="text-xs underline"
+                  className="text-xs underline cursor-pointer hover:opacity-80"
                   style={{ color: 'var(--color-primary)' }}
                 >
                   변경
@@ -361,7 +361,7 @@ function SignupForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
                 type="button"
                 onClick={handleResendCode}
                 disabled={cooldown > 0 || loading}
-                className="text-xs underline disabled:opacity-50 disabled:no-underline"
+                className="text-xs underline cursor-pointer hover:opacity-80 disabled:opacity-50 disabled:no-underline disabled:cursor-default"
                 style={{ color: 'var(--color-primary)' }}
               >
                 {cooldown > 0 ? `코드 재발송 (${cooldown}초)` : '코드 재발송'}
