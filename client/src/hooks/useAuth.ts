@@ -9,10 +9,10 @@ export function useAuth() {
   const { user, isAuthenticated, login: storeLogin, logout: storeLogout } = useAuthStore();
   const navigate = useNavigate();
 
-  const login = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (name: string, password: string) => {
     const res = await api.post<{ user: User; token: string; refreshToken: string }>(
       '/api/auth/login',
-      { email, password }
+      { name, password }
     );
     if (res.success) {
       storeLogin(res.data.user, res.data.token, res.data.refreshToken);

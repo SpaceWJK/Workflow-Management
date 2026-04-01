@@ -77,6 +77,72 @@ export async function login(email: string, password: string): Promise<LoginResul
 }
 
 /**
+ * 이름 기반 로그인: name/password 검증, Access Token + Refresh Token 발급.
+ */
+export async function loginByName(name: string, password: string): Promise<LoginResult> {
+  const user = await prisma.user.findFirst({
+    where: { name, isActive: true },
+  });
+
+  if (!user) {
+    throw new UnauthorizedError('이름 또는 비밀번호가 올바르지 않습니다.');
+  }
+
+  const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+  if (!isPasswordValid) {
+    throw new UnauthorizedError('이름 또는 비밀번호가 올바르지 않습니다.');
+  }
+
+  const payload: JwtPayload = {
+    userId: user.id,
+    email: user.email,
+    role: user.role as JwtPayload['role'],
+  };
+
+  const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRY });
+  const refreshToken = jwt.sign(payload, REFRESH_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRY });
+
+  return {
+    token: accessToken,
+    accessToken,
+    refreshToken,
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    },
+  };
+}
+
+/**
+ * 단순 회원가입: 이메일 인증 없이 이름/이메일/비밀번호로 가입.
+ */
+export async function signupSimple(
+  name: string,
+  email: string,
+  password: string,
+): Promise<{ id: number; email: string; name: string; role: string }> {
+  const existingEmail = await prisma.user.findUnique({ where: { email } });
+  if (existingEmail) {
+    throw new AppError(400, '이미 사용 중인 이메일입니다.');
+  }
+
+  const existingName = await prisma.user.findFirst({ where: { name } });
+  if (existingName) {
+    throw new AppError(400, '이미 사용 중인 이름입니다.');
+  }
+
+  const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+
+  const user = await prisma.user.create({
+    data: { email, passwordHash, name, role: 'QA_MEMBER' },
+  });
+
+  return { id: user.id, email: user.email, name: user.name, role: user.role };
+}
+
+/**
  * Refresh Token 검증 -> 새 Access Token 발급.
  */
 export async function refresh(refreshToken: string): Promise<{ accessToken: string }> {

@@ -30,18 +30,18 @@ const refreshLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// --- POST /api/auth/login ---
+// --- POST /api/auth/login (이름 + 비밀번호) ---
 const loginSchema = {
   body: z.object({
-    email: z.string().email('Invalid email format'),
-    password: z.string().min(1, 'Password is required'),
+    name: z.string().min(1, '이름을 입력해주세요.'),
+    password: z.string().min(1, '비밀번호를 입력해주세요.'),
   }),
 };
 
 router.post('/login', loginLimiter, validate(loginSchema), async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const { email, password } = req.body;
-    const result = await authService.login(email, password);
+    const { name, password } = req.body;
+    const result = await authService.loginByName(name, password);
     res.json({ success: true, data: result });
   } catch (err) {
     next(err);
@@ -147,14 +147,13 @@ const signupSchema = {
     name: z.string().min(2, '이름은 최소 2자 이상이어야 합니다.'),
     email: z.string().email('올바른 이메일 형식이 아닙니다.'),
     password: z.string().min(6, '비밀번호는 최소 6자 이상이어야 합니다.'),
-    code: z.string().length(6, '인증코드는 6자리입니다.'),
   }),
 };
 
 router.post('/signup', signupLimiter, validate(signupSchema), async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const { name, email, password, code } = req.body;
-    const user = await authService.signup(name, email, password, code);
+    const { name, email, password } = req.body;
+    const user = await authService.signupSimple(name, email, password);
     res.status(201).json({ success: true, data: { user } });
   } catch (err) {
     next(err);

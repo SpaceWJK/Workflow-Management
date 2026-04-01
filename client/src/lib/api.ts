@@ -81,7 +81,7 @@ export async function verifyEmailCode(email: string, code: string) {
   return res.json() as Promise<ApiResponse<{ verified: boolean }>>;
 }
 
-export async function signup(data: { name: string; email: string; password: string; code: string }) {
+export async function signup(data: { name: string; email: string; password: string; code?: string }) {
   const res = await fetch(`${BASE_URL}/api/auth/signup`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
