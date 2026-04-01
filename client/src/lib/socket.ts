@@ -5,7 +5,7 @@ let socket: Socket | null = null;
 export function getSocket(): Socket {
   if (!socket) {
     const token = localStorage.getItem('token');
-    socket = io('', {
+    socket = io(import.meta.env.VITE_API_URL || '', {
       auth: { token },
       reconnection: true,
       reconnectionDelay: 1000,
