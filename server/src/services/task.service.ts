@@ -168,8 +168,8 @@ export async function updateTask(id: number, data: UpdateTaskData) {
     where: { id, version, isDeleted: false },
     data: {
       ...updateFields,
-      startDate: updateFields.startDate ? new Date(updateFields.startDate) : undefined,
-      dueDate: updateFields.dueDate ? new Date(updateFields.dueDate) : undefined,
+      ...(updateFields.startDate ? { startDate: new Date(updateFields.startDate) } : {}),
+      ...(updateFields.dueDate ? { dueDate: new Date(updateFields.dueDate) } : {}),
       version: { increment: 1 },
       updatedAt: new Date(),
     },
