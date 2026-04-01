@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env
+*.log
+.DS_Store
+_workspace/
+.claude/
+server/prisma/*.db
+server/prisma/migrations/

@@ -1,0 +1,311 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// User
+// ─────────────────────────────────────────────
+model User {
+  id           Int      @id @default(autoincrement())
+  name         String   @db.VarChar(100)
+  email        String   @unique @db.VarChar(150)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  role         String   @default("QA_MEMBER") @db.VarChar(50)
+  teamStatus   String   @default("AVAILABLE") @map("team_status") @db.VarChar(50)
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  assignedTasks   Task[]             @relation("TaskAssignee")
+  createdTasks    Task[]             @relation("TaskCreator")
+  createdProjects Project[]          @relation("ProjectCreator")
+  projectMembers  ProjectMember[]
+  leaves          Leave[]
+  approvedLeaves  Leave[]            @relation("LeaveApprover")
+  notifications   Notification[]
+  assignedIssues  Issue[]            @relation("IssueAssignee")
+  activityLogs    ActivityLog[]
+  progressLogs    TaskProgressLog[]
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────
+// Project
+// ─────────────────────────────────────────────
+model Project {
+  id          Int       @id @default(autoincrement())
+  name        String    @db.VarChar(150)
+  description String?   @db.Text
+  status      String    @default("ACTIVE") @db.VarChar(50)
+  color       String?   @db.VarChar(20)
+  startDate   DateTime? @map("start_date") @db.Date
+  endDate     DateTime? @map("end_date") @db.Date
+  version     Int       @default(0)
+  isDeleted   Boolean   @default(false) @map("is_deleted")
+  createdBy   Int?      @map("created_by")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  creator User?           @relation("ProjectCreator", fields: [createdBy], references: [id])
+  tasks   Task[]
+  members ProjectMember[]
+
+  @@map("projects")
+}
+
+// ─────────────────────────────────────────────
+// Task
+// ─────────────────────────────────────────────
+model Task {
+  id               Int      @id @default(autoincrement())
+  projectId        Int      @map("project_id")
+  title            String   @db.VarChar(200)
+  description      String?  @db.Text
+  assigneeId       Int?     @map("assignee_id")
+  priority         String   @default("NORMAL") @db.VarChar(50)
+  status           String   @default("PENDING") @db.VarChar(50)
+  startDate        DateTime @map("start_date") @db.Date
+  dueDate          DateTime @map("due_date") @db.Date
+  progressTotal    Decimal  @default(0) @map("progress_total") @db.Decimal(5, 2)
+  expectedProgress Decimal  @default(0) @map("expected_progress") @db.Decimal(5, 2)
+  riskLevel        String   @default("LOW") @map("risk_level") @db.VarChar(50)
+  memo             String?  @db.Text
+  version          Int      @default(0)
+  isDeleted        Boolean  @default(false) @map("is_deleted")
+  createdBy        Int?     @map("created_by")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  project      Project          @relation(fields: [projectId], references: [id])
+  assignee     User?            @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  creator      User?            @relation("TaskCreator", fields: [createdBy], references: [id])
+  testTypes    TaskTestType[]
+  progressLogs TaskProgressLog[]
+  issues       Issue[]
+  dependsOn    TaskDependency[] @relation("DependentTask")
+  dependedBy   TaskDependency[] @relation("DependencyTarget")
+
+  @@index([projectId])
+  @@index([assigneeId])
+  @@index([status])
+  @@index([dueDate])
+  @@index([startDate])
+  @@map("tasks")
+}
+
+// ─────────────────────────────────────────────
+// TestTypeCode (코드 마스터)
+// ─────────────────────────────────────────────
+model TestTypeCode {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique @db.VarChar(50)
+  name        String   @db.VarChar(100)
+  description String?  @db.Text
+  isActive    Boolean  @default(true) @map("is_active")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  taskTestTypes TaskTestType[]
+
+  @@map("test_type_codes")
+}
+
+// ─────────────────────────────────────────────
+// TaskTestType (일감-테스트종류 매핑)
+// ─────────────────────────────────────────────
+model TaskTestType {
+  id           Int      @id @default(autoincrement())
+  taskId       Int      @map("task_id")
+  testTypeCode String   @map("test_type_code") @db.VarChar(50)
+  progress     Decimal  @default(0) @db.Decimal(5, 2)
+  note         String?  @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  task     Task         @relation(fields: [taskId], references: [id])
+  testType TestTypeCode @relation(fields: [testTypeCode], references: [code])
+
+  progressLogs TaskProgressLog[]
+
+  @@index([taskId])
+  @@map("task_test_types")
+}
+
+// ─────────────────────────────────────────────
+// TaskProgressLog
+// ─────────────────────────────────────────────
+model TaskProgressLog {
+  id             Int      @id @default(autoincrement())
+  taskId         Int      @map("task_id")
+  taskTestTypeId Int?     @map("task_test_type_id")
+  oldProgress    Decimal? @map("old_progress") @db.Decimal(5, 2)
+  newProgress    Decimal  @map("new_progress") @db.Decimal(5, 2)
+  changedBy      Int?     @map("changed_by")
+  changedAt      DateTime @default(now()) @map("changed_at")
+
+  task         Task          @relation(fields: [taskId], references: [id])
+  taskTestType TaskTestType? @relation(fields: [taskTestTypeId], references: [id])
+  user         User?         @relation(fields: [changedBy], references: [id])
+
+  @@index([taskId])
+  @@index([changedBy])
+  @@map("task_progress_logs")
+}
+
+// ─────────────────────────────────────────────
+// TaskDependency
+// ─────────────────────────────────────────────
+model TaskDependency {
+  id              Int      @id @default(autoincrement())
+  taskId          Int      @map("task_id")
+  dependsOnTaskId Int      @map("depends_on_task_id")
+  type            String   @default("BLOCKS") @db.VarChar(50)
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  task      Task @relation("DependentTask", fields: [taskId], references: [id])
+  dependsOn Task @relation("DependencyTarget", fields: [dependsOnTaskId], references: [id])
+
+  @@unique([taskId, dependsOnTaskId])
+  @@map("task_dependencies")
+}
+
+// ─────────────────────────────────────────────
+// Leave (부재/휴가)
+// ─────────────────────────────────────────────
+model Leave {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @map("user_id")
+  type       String   @db.VarChar(50)
+  startDate  DateTime @map("start_date") @db.Date
+  endDate    DateTime @map("end_date") @db.Date
+  reason     String?  @db.VarChar(255)
+  status     String   @default("APPROVED") @db.VarChar(50)
+  approvedBy Int?     @map("approved_by")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user     User  @relation(fields: [userId], references: [id])
+  approver User? @relation("LeaveApprover", fields: [approvedBy], references: [id])
+
+  @@index([userId])
+  @@index([startDate, endDate])
+  @@map("leaves")
+}
+
+// ─────────────────────────────────────────────
+// Issue
+// ─────────────────────────────────────────────
+model Issue {
+  id          Int      @id @default(autoincrement())
+  taskId      Int      @map("task_id")
+  title       String   @db.VarChar(200)
+  description String?  @db.Text
+  severity    String   @default("MEDIUM") @db.VarChar(50)
+  status      String   @default("OPEN") @db.VarChar(50)
+  assigneeId  Int?     @map("assignee_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  task     Task  @relation(fields: [taskId], references: [id])
+  assignee User? @relation("IssueAssignee", fields: [assigneeId], references: [id])
+
+  @@index([taskId])
+  @@index([assigneeId])
+  @@index([status])
+  @@map("issues")
+}
+
+// ─────────────────────────────────────────────
+// Notification
+// ─────────────────────────────────────────────
+model Notification {
+  id         Int      @id @default(autoincrement())
+  type       String   @db.VarChar(50)
+  title      String   @db.VarChar(200)
+  message    String?  @db.Text
+  targetType String?  @map("target_type") @db.VarChar(50)
+  targetId   Int?     @map("target_id")
+  userId     Int?     @map("user_id")
+  isRead     Boolean  @default(false) @map("is_read")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+// ─────────────────────────────────────────────
+// AlertRule
+// ─────────────────────────────────────────────
+model AlertRule {
+  id             Int      @id @default(autoincrement())
+  code           String   @unique @db.VarChar(50)
+  name           String   @db.VarChar(100)
+  isEnabled      Boolean  @default(true) @map("is_enabled")
+  thresholdValue Decimal? @map("threshold_value") @db.Decimal(10, 2)
+  configJson     Json?    @map("config_json")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("alert_rules")
+}
+
+// ─────────────────────────────────────────────
+// ActivityLog
+// ─────────────────────────────────────────────
+model ActivityLog {
+  id         Int      @id @default(autoincrement())
+  entityType String   @map("entity_type") @db.VarChar(50)
+  entityId   Int      @map("entity_id")
+  actionType String   @map("action_type") @db.VarChar(50)
+  oldValue   Json?    @map("old_value")
+  newValue   Json?    @map("new_value")
+  changedBy  Int?     @map("changed_by")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [changedBy], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([changedBy])
+  @@map("activity_logs")
+}
+
+// ─────────────────────────────────────────────
+// ProjectMember (프로젝트-멤버 매핑)
+// ─────────────────────────────────────────────
+model ProjectMember {
+  id        Int      @id @default(autoincrement())
+  projectId Int      @map("project_id")
+  userId    Int      @map("user_id")
+  role      String   @default("MEMBER") @db.VarChar(50)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  project Project @relation(fields: [projectId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@unique([projectId, userId])
+  @@index([userId])
+  @@map("project_members")
+}
+
+// ─────────────────────────────────────────────
+// Setting (시스템 설정)
+// ─────────────────────────────────────────────
+model Setting {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique @db.VarChar(100)
+  value     String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("settings")
+}
