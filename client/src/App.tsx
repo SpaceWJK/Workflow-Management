@@ -1,6 +1,9 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from './stores/authStore';
+import { api } from './lib/api';
+import type { User } from './types';
 
 import AppShell from './components/layout/AppShell';
 import LoginPage from './pages/LoginPage';
@@ -13,6 +16,7 @@ import ProjectDetailPage from './components/projects/ProjectDetailPage';
 import CalendarPage from './components/calendar/CalendarPage';
 import TeamPage from './components/team/TeamPage';
 import SettingsPage from './components/settings/SettingsPage';
+import AdminPage from './components/admin/AdminPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,16 +28,35 @@ const queryClient = new QueryClient({
   },
 });
 
+function useRestoreUser() {
+  const token = useAuthStore((s) => s.token);
+  const user = useAuthStore((s) => s.user);
+  const setUser = useAuthStore((s) => s.setUser);
+  const logout = useAuthStore((s) => s.logout);
+
+  useEffect(() => {
+    if (token && !user) {
+      api.get<User>('/api/auth/me').then((res) => {
+        if (res.success && res.data) {
+          setUser(res.data);
+        } else {
+          logout();
+        }
+      });
+    }
+  }, [token, user, setUser, logout]);
+}
+
 function ProtectedRoute() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   return <Outlet />;
 }
 
-export default function App() {
+function AppInner() {
+  useRestoreUser();
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter basename={import.meta.env.BASE_URL}>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route element={<ProtectedRoute />}>
@@ -48,11 +71,19 @@ export default function App() {
               <Route path="/calendar" element={<CalendarPage />} />
               <Route path="/team" element={<TeamPage />} />
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/admin" element={<AdminPage />} />
             </Route>
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
+  );
+}
+
+export default function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AppInner />
     </QueryClientProvider>
   );
 }

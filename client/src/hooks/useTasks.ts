@@ -31,7 +31,7 @@ export function useTask(id: number | undefined) {
 export function useCreateTask() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: Partial<Task>) => api.post<Task>('/api/tasks', data),
+    mutationFn: (data: Record<string, unknown>) => api.post<Task>('/api/tasks', data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['tasks'] }),
   });
 }
@@ -39,7 +39,7 @@ export function useCreateTask() {
 export function useUpdateTask() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...data }: Partial<Task> & { id: number }) =>
+    mutationFn: ({ id, ...data }: Record<string, unknown> & { id: number }) =>
       api.put<Task>(`/api/tasks/${id}`, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['tasks'] }),
   });

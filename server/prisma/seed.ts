@@ -28,28 +28,40 @@ async function main() {
   console.log(`  TestTypeCodes: ${testTypeCodes.length} upserted`);
 
   // ─────────────────────────────────────────────
-  // 2. 기본 사용자 (admin)
+  // 2. 기본 사용자 (비밀번호 통일: qa2026!)
   // ─────────────────────────────────────────────
-  const adminPasswordHash = await bcrypt.hash('admin123', 12);
+  const commonPassword = await bcrypt.hash('qa2026!', 12);
 
   const admin = await prisma.user.upsert({
     where: { email: 'admin@qa.com' },
-    update: {},
+    update: { passwordHash: commonPassword },
     create: {
       name: 'Admin',
       email: 'admin@qa.com',
-      passwordHash: adminPasswordHash,
+      passwordHash: commonPassword,
       role: 'ADMIN',
       teamStatus: 'AVAILABLE',
     },
   });
   console.log(`  Admin user: ${admin.email} (id=${admin.id})`);
 
-  // ─────────────────────────────────────────────
-  // 3. 샘플 팀원 4명
-  // ─────────────────────────────────────────────
-  const memberPassword = await bcrypt.hash('member123', 12);
+  // 김우주 ADMIN 계정
+  const wjkim = await prisma.user.upsert({
+    where: { email: 'es-wjkim@smilegate.com' },
+    update: { passwordHash: commonPassword, role: 'ADMIN' },
+    create: {
+      name: '김우주',
+      email: 'es-wjkim@smilegate.com',
+      passwordHash: commonPassword,
+      role: 'ADMIN',
+      teamStatus: 'AVAILABLE',
+    },
+  });
+  console.log(`  김우주 ADMIN: ${wjkim.email} (id=${wjkim.id})`);
 
+  // ─────────────────────────────────────────────
+  // 3. 샘플 팀원 4명 (비밀번호 통일: qa2026!)
+  // ─────────────────────────────────────────────
   const members = [
     { name: '김팀장', email: 'kim@qa.com',  role: 'QA_MANAGER', teamStatus: 'AVAILABLE' },
     { name: '이검증', email: 'lee@qa.com',  role: 'QA_MEMBER',  teamStatus: 'AVAILABLE' },
@@ -61,10 +73,10 @@ async function main() {
   for (const m of members) {
     const user = await prisma.user.upsert({
       where: { email: m.email },
-      update: {},
+      update: { passwordHash: commonPassword },
       create: {
         ...m,
-        passwordHash: memberPassword,
+        passwordHash: commonPassword,
       },
     });
     createdMembers.push(user);

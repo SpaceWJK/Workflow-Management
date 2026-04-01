@@ -14,6 +14,7 @@ import teamRoutes from './routes/team.js';
 import calendarRoutes from './routes/calendar.js';
 import leaveRoutes from './routes/leaves.js';
 import settingsRoutes from './routes/settings.js';
+import adminRoutes from './routes/admin.js';
 import { globalErrorHandler, notFoundHandler } from './middleware/error.js';
 
 export function createApp() {
@@ -72,6 +73,7 @@ export function createApp() {
   app.use('/api/calendar', calendarRoutes);
   app.use('/api/leaves', leaveRoutes);
   app.use('/api/settings', settingsRoutes);
+  app.use('/api/admin', adminRoutes);
 
   // --- 404 + 글로벌 에러 핸들러 ---
   app.use(notFoundHandler);

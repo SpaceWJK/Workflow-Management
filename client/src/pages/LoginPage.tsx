@@ -95,12 +95,12 @@ export default function LoginPage() {
     try {
       const res = await signup({ name: signupName.trim(), email: signupEmail, password: signupPassword });
       if (res.success) {
-        setSignupSuccess('가입 완료! 로그인해주세요.');
+        setSignupSuccess('가입 신청 완료! 관리자 승인 후 로그인할 수 있습니다.');
         setTimeout(() => {
           setMode('login');
           setLoginName(signupName.trim());
           setSignupSuccess('');
-        }, 1500);
+        }, 3000);
       } else {
         setSignupError(res.message || '회원가입에 실패했습니다.');
       }

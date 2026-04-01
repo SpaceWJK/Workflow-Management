@@ -80,12 +80,17 @@ export async function login(email: string, password: string): Promise<LoginResul
  * 이름 기반 로그인: name/password 검증, Access Token + Refresh Token 발급.
  */
 export async function loginByName(name: string, password: string): Promise<LoginResult> {
+  // isActive 조건 없이 먼저 찾아서 승인대기/비활성 분기 처리
   const user = await prisma.user.findFirst({
-    where: { name, isActive: true },
+    where: { name },
   });
 
   if (!user) {
     throw new UnauthorizedError('이름 또는 비밀번호가 올바르지 않습니다.');
+  }
+
+  if (!user.isActive) {
+    throw new AppError(403, '가입 승인 대기 중입니다. 관리자 승인 후 로그인할 수 있습니다.');
   }
 
   const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
@@ -136,7 +141,7 @@ export async function signupSimple(
   const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
 
   const user = await prisma.user.create({
-    data: { email, passwordHash, name, role: 'QA_MEMBER' },
+    data: { email, passwordHash, name, role: 'QA_MEMBER', isActive: false },
   });
 
   return { id: user.id, email: user.email, name: user.name, role: user.role };

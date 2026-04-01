@@ -6,11 +6,13 @@ import {
   Calendar,
   Users,
   Settings,
+  Shield,
   ChevronLeft,
   ChevronRight,
   Activity,
 } from 'lucide-react';
 import { useUIStore } from '../../stores/uiStore';
+import { useAuthStore } from '../../stores/authStore';
 import { cn } from '../../lib/utils';
 
 const NAV_ITEMS = [
@@ -22,9 +24,17 @@ const NAV_ITEMS = [
   { to: '/settings', icon: Settings, label: '설정' },
 ];
 
+const ADMIN_NAV_ITEMS = [
+  { to: '/admin', icon: Shield, label: '회원 관리' },
+];
+
 export default function Sidebar() {
   const collapsed = useUIStore((s) => s.sidebarCollapsed);
   const toggle = useUIStore((s) => s.toggleSidebar);
+  const user = useAuthStore((s) => s.user);
+  const isAdmin = user?.role === 'ADMIN';
+
+  const allNavItems = isAdmin ? [...NAV_ITEMS, ...ADMIN_NAV_ITEMS] : NAV_ITEMS;
 
   return (
     <aside
@@ -50,7 +60,7 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 py-2 overflow-y-auto">
-        {NAV_ITEMS.map((item) => (
+        {allNavItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
