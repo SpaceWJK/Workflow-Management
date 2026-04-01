@@ -599,7 +599,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={switchToSignup}
-                  className="text-xs font-semibold underline"
+                  className="text-xs font-semibold underline cursor-pointer hover:opacity-80"
                   style={{ color: 'var(--color-primary)' }}
                 >
                   회원가입
@@ -614,7 +614,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={switchToLogin}
-                  className="flex items-center justify-center gap-1 mx-auto text-xs"
+                  className="flex items-center justify-center gap-1 mx-auto text-xs cursor-pointer hover:opacity-80"
                   style={{ color: 'var(--color-text-secondary)' }}
                 >
                   <ArrowLeft className="w-3 h-3" />
