@@ -39,15 +39,10 @@ export interface AuthenticatedRequest extends Request {
 export type UserRole = 'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER';
 
 export type TaskStatus =
-  | 'BACKLOG'
   | 'PENDING'
-  | 'READY'
   | 'IN_PROGRESS'
-  | 'REVIEW'
-  | 'BLOCKED'
   | 'ON_HOLD'
   | 'DONE'
-  | 'DELAYED'
   | 'CANCELED';
 
 export type TaskPriority = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
@@ -55,15 +50,13 @@ export type TaskPriority = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
 export type RiskLevel = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE';
 
 export type TestType =
-  | 'FUNCTIONAL'
-  | 'SMOKE'
-  | 'REGRESSION'
+  | 'BVT'
+  | 'BAT'
+  | 'FUNCTIONALITY'
   | 'PERFORMANCE'
-  | 'SECURITY'
   | 'COMPATIBILITY'
   | 'LOCALIZATION'
-  | 'USABILITY'
-  | 'AD_HOC';
+  | 'BALANCE';
 
 export type LeaveType = 'ANNUAL' | 'HALF_DAY_AM' | 'HALF_DAY_PM' | 'SICK' | 'REMOTE' | 'OTHER';
 
@@ -72,16 +65,11 @@ export type LeaveStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED';
 // --- 상태 전이 매트릭스 ---
 
 export const VALID_TRANSITIONS: Record<TaskStatus, TaskStatus[]> = {
-  BACKLOG: ['PENDING', 'READY', 'CANCELED'],
-  PENDING: ['READY', 'IN_PROGRESS', 'CANCELED'],
-  READY: ['IN_PROGRESS', 'ON_HOLD', 'CANCELED'],
-  IN_PROGRESS: ['REVIEW', 'BLOCKED', 'ON_HOLD', 'DELAYED', 'CANCELED'],
-  REVIEW: ['IN_PROGRESS', 'DONE', 'BLOCKED'],
-  BLOCKED: ['IN_PROGRESS', 'ON_HOLD', 'CANCELED'],
-  ON_HOLD: ['READY', 'IN_PROGRESS', 'CANCELED'],
+  PENDING: ['IN_PROGRESS', 'ON_HOLD', 'CANCELED'],
+  IN_PROGRESS: ['ON_HOLD', 'DONE', 'CANCELED'],
+  ON_HOLD: ['PENDING', 'IN_PROGRESS', 'CANCELED'],
   DONE: ['IN_PROGRESS'],
-  DELAYED: ['IN_PROGRESS', 'BLOCKED', 'ON_HOLD', 'CANCELED'],
-  CANCELED: [],
+  CANCELED: ['PENDING'],
 };
 
 // --- 필터/쿼리 ---

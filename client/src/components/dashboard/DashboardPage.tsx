@@ -24,7 +24,7 @@ export default function DashboardPage() {
     totalProjects: projects.length,
     totalTasks: tasks.length,
     inProgressTasks: tasks.filter((t) => t.status === 'IN_PROGRESS').length,
-    delayedTasks: tasks.filter((t) => t.status === 'DELAYED').length,
+    delayedTasks: tasks.filter((t) => t.status === 'ON_HOLD' || t.status === 'CANCELED').length,
     dueTodayTasks: tasks.filter((t) => t.dueDate === today).length,
     absentMembers: members.filter(
       (m) => m.teamStatus === 'ON_LEAVE' || m.teamStatus === 'AWAY'

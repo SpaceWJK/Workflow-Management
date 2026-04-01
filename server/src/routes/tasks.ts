@@ -67,14 +67,19 @@ const createTaskSchema = {
     description: z.string().optional(),
     projectId: z.coerce.number().int().min(1, 'Project ID is required'),
     assigneeId: z.coerce.number().int().optional(),
+    assigneeName: z.string().max(100).optional(),
     status: z.enum([
-      'BACKLOG', 'PENDING', 'READY', 'IN_PROGRESS', 'REVIEW',
-      'BLOCKED', 'ON_HOLD', 'DONE', 'DELAYED', 'CANCELED',
+      'PENDING', 'IN_PROGRESS', 'ON_HOLD', 'DONE', 'CANCELED',
     ]).optional(),
-    priority: z.enum(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']).optional(),
+    priority: z.enum(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'NORMAL', 'URGENT']).optional(),
     startDate: z.string().optional(),
     dueDate: z.string().optional(),
-    testTypes: z.array(z.string()).optional(),
+    progressTotal: z.coerce.number().min(0).max(100).optional(),
+    testTypes: z.array(z.object({
+      testTypeCode: z.string(),
+      progress: z.coerce.number().min(0).max(100).optional(),
+      note: z.string().optional(),
+    })).optional(),
   }),
 };
 
@@ -133,8 +138,7 @@ router.delete('/:id', async (req: AuthenticatedRequest, res: Response, next: Nex
 const changeStatusSchema = {
   body: z.object({
     status: z.enum([
-      'BACKLOG', 'PENDING', 'READY', 'IN_PROGRESS', 'REVIEW',
-      'BLOCKED', 'ON_HOLD', 'DONE', 'DELAYED', 'CANCELED',
+      'PENDING', 'IN_PROGRESS', 'ON_HOLD', 'DONE', 'CANCELED',
     ]),
   }),
 };

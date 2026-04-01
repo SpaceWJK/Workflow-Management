@@ -7,14 +7,13 @@ interface TaskTestTypeRepeaterProps {
 }
 
 const TEST_TYPE_OPTIONS = [
-  { code: 'functional', name: '기능 테스트' },
-  { code: 'regression', name: '회귀 테스트' },
-  { code: 'smoke', name: '스모크 테스트' },
-  { code: 'integration', name: '통합 테스트' },
-  { code: 'performance', name: '성능 테스트' },
-  { code: 'security', name: '보안 테스트' },
-  { code: 'ux', name: 'UX 테스트' },
-  { code: 'localization', name: '현지화 테스트' },
+  { code: 'BVT',           name: '구동 테스트(BVT)' },
+  { code: 'BAT',           name: '인수 테스트(BAT)' },
+  { code: 'FUNCTIONALITY', name: '기능 테스트(Functionality)' },
+  { code: 'PERFORMANCE',   name: '성능 테스트' },
+  { code: 'COMPATIBILITY', name: '호환 테스트(Compatibility)' },
+  { code: 'LOCALIZATION',  name: '현지화 테스트(Localization)' },
+  { code: 'BALANCE',       name: '밸런스 테스트(Balance)' },
 ];
 
 export default function TaskTestTypeRepeater({ testTypes, onChange }: TaskTestTypeRepeaterProps) {

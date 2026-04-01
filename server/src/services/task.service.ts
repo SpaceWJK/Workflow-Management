@@ -107,11 +107,13 @@ interface CreateTaskData {
   description?: string;
   projectId: number;
   assigneeId?: number;
+  assigneeName?: string;
   status?: TaskStatus;
   priority?: string;
   startDate?: string;
   dueDate?: string;
-  testTypes?: string[];
+  progressTotal?: number;
+  testTypes?: { testTypeCode: string; progress?: number; note?: string }[];
 }
 
 export async function createTask(data: CreateTaskData, createdBy: number) {
@@ -121,16 +123,19 @@ export async function createTask(data: CreateTaskData, createdBy: number) {
       description: data.description,
       projectId: data.projectId,
       assigneeId: data.assigneeId,
-      status: data.status || 'BACKLOG',
-      priority: data.priority || 'MEDIUM',
+      assigneeName: data.assigneeName,
+      status: data.status || 'PENDING',
+      priority: data.priority || 'NORMAL',
+      progressTotal: data.progressTotal || 0,
       startDate: data.startDate ? new Date(data.startDate) : new Date(),
       dueDate: data.dueDate ? new Date(data.dueDate) : new Date(),
       createdBy,
       testTypes: data.testTypes
         ? {
-            create: data.testTypes.map((code) => ({
-              testTypeCode: code,
-              progress: 0,
+            create: data.testTypes.map((tt) => ({
+              testTypeCode: tt.testTypeCode,
+              progress: tt.progress || 0,
+              note: tt.note,
             })),
           }
         : undefined,
@@ -154,9 +159,11 @@ interface UpdateTaskData {
   title?: string;
   description?: string;
   assigneeId?: number;
+  assigneeName?: string;
   priority?: string;
   startDate?: string;
   dueDate?: string;
+  progressTotal?: number;
   version: number; // Optimistic Locking 필수
 }
 

@@ -6,7 +6,7 @@ interface ProjectKanbanProps {
   tasks: Task[];
 }
 
-const KANBAN_COLUMNS: TaskStatus[] = ['BACKLOG', 'PENDING', 'READY', 'IN_PROGRESS', 'REVIEW', 'BLOCKED', 'ON_HOLD', 'DONE', 'DELAYED', 'CANCELED'];
+const KANBAN_COLUMNS: TaskStatus[] = ['PENDING', 'IN_PROGRESS', 'ON_HOLD', 'DONE', 'CANCELED'];
 
 export default function ProjectKanban({ tasks }: ProjectKanbanProps) {
   const navigate = useNavigate();

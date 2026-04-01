@@ -68,6 +68,7 @@ model Task {
   title            String   @db.VarChar(200)
   description      String?  @db.Text
   assigneeId       Int?     @map("assignee_id")
+  assigneeName     String?  @map("assignee_name") @db.VarChar(100)
   priority         String   @default("NORMAL") @db.VarChar(50)
   status           String   @default("PENDING") @db.VarChar(50)
   startDate        DateTime @map("start_date") @db.Date

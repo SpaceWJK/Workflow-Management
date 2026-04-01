@@ -1,13 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Save } from 'lucide-react';
 import TaskTestTypeRepeater from './TaskTestTypeRepeater';
-import TaskProgressEditor from './TaskProgressEditor';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { useTask, useCreateTask, useUpdateTask } from '../../hooks/useTasks';
 import { useProjects } from '../../hooks/useProjects';
-import { useTeam } from '../../hooks/useTeam';
 import { PRIORITY_MAP, TASK_STATUS_MAP, type Priority, type TaskStatus, type TaskTestType } from '../../types';
 import dayjs from 'dayjs';
 
@@ -15,12 +13,11 @@ interface FormData {
   title: string;
   description: string;
   projectId: string;
-  assigneeId: string;
+  assigneeName: string;
   priority: Priority;
   status: TaskStatus;
   startDate: string;
   dueDate: string;
-  progressTotal: number;
   memo: string;
   testTypes: Partial<TaskTestType>[];
 }
@@ -29,12 +26,11 @@ const INITIAL: FormData = {
   title: '',
   description: '',
   projectId: '',
-  assigneeId: '',
+  assigneeName: '',
   priority: 'NORMAL',
   status: 'PENDING',
   startDate: dayjs().format('YYYY-MM-DD'),
   dueDate: dayjs().add(7, 'day').format('YYYY-MM-DD'),
-  progressTotal: 0,
   memo: '',
   testTypes: [],
 };
@@ -46,7 +42,6 @@ export default function TaskFormPage() {
 
   const { data: existingTask, isLoading: taskLoading } = useTask(id ? Number(id) : undefined);
   const { data: projects = [] } = useProjects();
-  const { data: members = [] } = useTeam();
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
 
@@ -59,17 +54,24 @@ export default function TaskFormPage() {
         title: existingTask.title,
         description: existingTask.description || '',
         projectId: String(existingTask.projectId),
-        assigneeId: existingTask.assigneeId ? String(existingTask.assigneeId) : '',
+        assigneeName: existingTask.assigneeName || existingTask.assignee?.name || '',
         priority: existingTask.priority,
         status: existingTask.status,
         startDate: existingTask.startDate,
         dueDate: existingTask.dueDate,
-        progressTotal: existingTask.progressTotal,
         memo: existingTask.memo || '',
         testTypes: existingTask.testTypes || [],
       });
     }
   }, [isEdit, existingTask]);
+
+  // 전체 진행율 = 테스트종류별 진행율 평균
+  const progressTotal = useMemo(() => {
+    const withProgress = form.testTypes.filter((t) => t.progress !== undefined);
+    if (withProgress.length === 0) return 0;
+    const sum = withProgress.reduce((acc, t) => acc + (t.progress || 0), 0);
+    return Math.round(sum / withProgress.length);
+  }, [form.testTypes]);
 
   const setField = <K extends keyof FormData>(key: K, value: FormData[K]) => {
     setForm((f) => ({ ...f, [key]: value }));
@@ -101,12 +103,12 @@ export default function TaskFormPage() {
       title: form.title,
       description: form.description || undefined,
       projectId: Number(form.projectId),
-      assigneeId: form.assigneeId ? Number(form.assigneeId) : undefined,
+      assigneeName: form.assigneeName || undefined,
       priority: form.priority,
       status: form.status,
       startDate: form.startDate,
       dueDate: form.dueDate,
-      progressTotal: form.progressTotal,
+      progressTotal,
       memo: form.memo || undefined,
       testTypes: form.testTypes.length > 0 ? form.testTypes : undefined,
     };
@@ -175,10 +177,13 @@ export default function TaskFormPage() {
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium" style={{ color: 'var(--color-text-secondary)' }}>담당자</label>
-              <select value={form.assigneeId} onChange={(e) => setField('assigneeId', e.target.value)} className={inputClass} style={inputStyle}>
-                <option value="">미지정</option>
-                {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-              </select>
+              <input
+                value={form.assigneeName}
+                onChange={(e) => setField('assigneeName', e.target.value)}
+                className={inputClass}
+                style={inputStyle}
+                placeholder="이름 입력"
+              />
             </div>
           </div>
 
@@ -233,26 +238,31 @@ export default function TaskFormPage() {
           </div>
         </div>
 
-        {/* Section: Test types */}
+        {/* Section: Test types + Progress */}
         <div
-          className="rounded-xl p-5"
+          className="rounded-xl p-5 flex flex-col gap-4"
           style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
         >
           <TaskTestTypeRepeater
             testTypes={form.testTypes}
             onChange={(tt) => setField('testTypes', tt)}
           />
-        </div>
-
-        {/* Section: Progress */}
-        <div
-          className="rounded-xl p-5"
-          style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
-        >
-          <TaskProgressEditor
-            value={form.progressTotal}
-            onChange={(v) => setField('progressTotal', v)}
-          />
+          {/* Auto-calculated progress */}
+          <div className="flex items-center gap-3 pt-2" style={{ borderTop: '1px solid var(--color-border)' }}>
+            <span className="text-sm font-medium">전체 진행율</span>
+            <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--color-bg)' }}>
+              <div
+                className="h-full rounded-full transition-all"
+                style={{
+                  width: `${progressTotal}%`,
+                  backgroundColor: progressTotal >= 100 ? 'var(--color-success)' : 'var(--color-primary)',
+                }}
+              />
+            </div>
+            <span className="text-sm font-bold" style={{ color: 'var(--color-primary)', minWidth: '40px', textAlign: 'right' }}>
+              {progressTotal}%
+            </span>
+          </div>
         </div>
 
         {/* Memo */}

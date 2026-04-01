@@ -51,6 +51,7 @@ export interface Task {
   title: string;
   description?: string;
   assigneeId?: number;
+  assigneeName?: string;
   priority: Priority;
   status: TaskStatus;
   startDate: string;
@@ -74,19 +75,14 @@ export const PRIORITY_MAP: Record<Priority, { label: string; color: string; orde
   LOW: { label: '낮음', color: 'var(--color-text-secondary)', order: 3 },
 };
 
-export type TaskStatus = 'BACKLOG' | 'PENDING' | 'READY' | 'IN_PROGRESS' | 'REVIEW' | 'BLOCKED' | 'ON_HOLD' | 'DONE' | 'DELAYED' | 'CANCELED';
+export type TaskStatus = 'PENDING' | 'IN_PROGRESS' | 'ON_HOLD' | 'DONE' | 'CANCELED';
 
 export const TASK_STATUS_MAP: Record<TaskStatus, { label: string; color: string }> = {
-  BACKLOG: { label: '백로그', color: 'var(--color-text-secondary)' },
   PENDING: { label: '대기', color: 'var(--color-text-secondary)' },
-  READY: { label: '진행예정', color: 'var(--color-info)' },
-  IN_PROGRESS: { label: '진행중', color: 'var(--color-primary)' },
-  REVIEW: { label: '리뷰', color: '#a855f7' },
-  BLOCKED: { label: '차단', color: 'var(--color-danger)' },
+  IN_PROGRESS: { label: '진행', color: 'var(--color-primary)' },
   ON_HOLD: { label: '보류', color: 'var(--color-warning)' },
   DONE: { label: '완료', color: 'var(--color-success)' },
-  DELAYED: { label: '지연', color: 'var(--color-danger)' },
-  CANCELED: { label: '취소', color: 'var(--color-text-secondary)' },
+  CANCELED: { label: '중단', color: 'var(--color-danger)' },
 };
 
 export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
