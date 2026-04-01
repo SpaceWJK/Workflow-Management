@@ -62,6 +62,34 @@ async function request<T>(
   return json as ApiResponse<T>;
 }
 
+// Auth - 회원가입 관련
+export async function sendVerificationCode(email: string) {
+  const res = await fetch(`${BASE_URL}/api/auth/send-code`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  return res.json() as Promise<ApiResponse<{ expiresAt: string }>>;
+}
+
+export async function verifyEmailCode(email: string, code: string) {
+  const res = await fetch(`${BASE_URL}/api/auth/verify-code`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, code }),
+  });
+  return res.json() as Promise<ApiResponse<{ verified: boolean }>>;
+}
+
+export async function signup(data: { name: string; email: string; password: string; code: string }) {
+  const res = await fetch(`${BASE_URL}/api/auth/signup`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return res.json() as Promise<ApiResponse<{ user: { id: string; email: string; name: string } }>>;
+}
+
 export const api = {
   get: <T>(url: string) => request<T>(url),
   post: <T>(url: string, body: unknown) =>

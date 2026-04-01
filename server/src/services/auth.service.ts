@@ -8,6 +8,7 @@ import prisma from '../prisma.js';
 import { JWT_SECRET } from '../middleware/auth.js';
 import type { JwtPayload } from '../types/index.js';
 import { UnauthorizedError, AppError, ForbiddenError } from '../types/index.js';
+import { sendVerificationEmail } from './email.service.js';
 
 if (!process.env.JWT_REFRESH_SECRET) {
   throw new Error('FATAL: JWT_REFRESH_SECRET environment variable is not set. Server cannot start without it.');
@@ -136,6 +137,126 @@ export async function register(
       role: data.role || 'MEMBER',
     },
   });
+
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+  };
+}
+
+// ============================================================
+// 회원가입 + 이메일 인증
+// ============================================================
+
+/**
+ * 6자리 숫자 인증코드 생성.
+ */
+function generateVerificationCode(): string {
+  return Math.random().toString().slice(2, 8).padStart(6, '0');
+}
+
+/**
+ * 인증코드 발송: 6자리 랜덤 코드 생성, DB 저장, 이메일 발송.
+ * - 이미 가입된 이메일이면 에러
+ * - 1분 내 재요청 방지 (rate limit)
+ * - 코드 유효기간: 10분
+ */
+export async function sendVerificationCode(email: string): Promise<void> {
+  // 이미 가입된 이메일 확인
+  const existingUser = await prisma.user.findUnique({ where: { email } });
+  if (existingUser) {
+    throw new AppError(400, '이미 가입된 이메일입니다.');
+  }
+
+  // 1분 내 재요청 방지
+  const recentRecord = await prisma.emailVerification.findFirst({
+    where: { email },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  if (recentRecord) {
+    const elapsed = Date.now() - recentRecord.createdAt.getTime();
+    if (elapsed < 60_000) {
+      throw new AppError(429, '인증코드 재발송은 1분 후에 가능합니다.');
+    }
+  }
+
+  const code = generateVerificationCode();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10분
+
+  await prisma.emailVerification.create({
+    data: { email, code, expiresAt },
+  });
+
+  await sendVerificationEmail(email, code);
+}
+
+/**
+ * 인증코드 검증: 코드 일치 + 만료 확인 후 verified = true 처리.
+ */
+export async function verifyEmailCode(email: string, code: string): Promise<void> {
+  const record = await prisma.emailVerification.findFirst({
+    where: { email, code, verified: false },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  if (!record) {
+    throw new AppError(400, '유효하지 않은 인증코드입니다.');
+  }
+
+  if (record.expiresAt < new Date()) {
+    throw new AppError(400, '만료된 인증코드입니다. 새 코드를 요청해주세요.');
+  }
+
+  await prisma.emailVerification.updateMany({
+    where: { id: record.id },
+    data: { verified: true },
+  });
+}
+
+/**
+ * 셀프 회원가입: 이메일 인증 완료 후 계정 생성.
+ * - verified된 인증 기록 필수
+ * - 비밀번호 bcrypt 해시
+ * - 기본 role: QA_MEMBER
+ * - 가입 완료 후 인증 기록 삭제
+ */
+export async function signup(
+  name: string,
+  email: string,
+  password: string,
+  code: string,
+): Promise<{ id: number; email: string; name: string; role: string }> {
+  // 인증 기록 확인
+  const verification = await prisma.emailVerification.findFirst({
+    where: { email, code, verified: true },
+  });
+
+  if (!verification) {
+    throw new AppError(400, '이메일 인증이 완료되지 않았습니다.');
+  }
+
+  // 이메일 중복 확인
+  const existingUser = await prisma.user.findUnique({ where: { email } });
+  if (existingUser) {
+    throw new AppError(400, '이미 가입된 이메일입니다.');
+  }
+
+  const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+
+  const user = await prisma.user.create({
+    data: {
+      email,
+      passwordHash,
+      name,
+      role: 'QA_MEMBER',
+    },
+  });
+
+  // 인증 기록 삭제
+  await prisma.emailVerification.deleteMany({ where: { email } });
 
   return {
     id: user.id,

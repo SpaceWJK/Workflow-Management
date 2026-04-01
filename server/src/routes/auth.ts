@@ -90,6 +90,77 @@ router.post(
   },
 );
 
+// --- POST /api/auth/send-code (인증코드 발송) ---
+const sendCodeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15분
+  max: 3,                    // IP당 3회
+  message: { success: false, message: '인증코드 요청이 너무 많습니다. 15분 후 다시 시도해주세요.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const sendCodeSchema = {
+  body: z.object({
+    email: z.string().email('올바른 이메일 형식이 아닙니다.'),
+  }),
+};
+
+router.post('/send-code', sendCodeLimiter, validate(sendCodeSchema), async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const { email } = req.body;
+    await authService.sendVerificationCode(email);
+    res.json({ success: true, message: '인증코드가 발송되었습니다.' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// --- POST /api/auth/verify-code (인증코드 검증) ---
+const verifyCodeSchema = {
+  body: z.object({
+    email: z.string().email('올바른 이메일 형식이 아닙니다.'),
+    code: z.string().length(6, '인증코드는 6자리입니다.'),
+  }),
+};
+
+router.post('/verify-code', validate(verifyCodeSchema), async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const { email, code } = req.body;
+    await authService.verifyEmailCode(email, code);
+    res.json({ success: true, message: '이메일이 인증되었습니다.' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// --- POST /api/auth/signup (셀프 회원가입) ---
+const signupLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15분
+  max: 5,                    // IP당 5회
+  message: { success: false, message: '회원가입 요청이 너무 많습니다. 15분 후 다시 시도해주세요.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const signupSchema = {
+  body: z.object({
+    name: z.string().min(2, '이름은 최소 2자 이상이어야 합니다.'),
+    email: z.string().email('올바른 이메일 형식이 아닙니다.'),
+    password: z.string().min(6, '비밀번호는 최소 6자 이상이어야 합니다.'),
+    code: z.string().length(6, '인증코드는 6자리입니다.'),
+  }),
+};
+
+router.post('/signup', signupLimiter, validate(signupSchema), async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const { name, email, password, code } = req.body;
+    const user = await authService.signup(name, email, password, code);
+    res.status(201).json({ success: true, data: { user } });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // --- GET /api/auth/me ---
 router.get('/me', authenticate, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {

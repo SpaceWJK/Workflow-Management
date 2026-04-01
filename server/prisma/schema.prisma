@@ -309,3 +309,18 @@ model Setting {
 
   @@map("settings")
 }
+
+// ─────────────────────────────────────────────
+// EmailVerification (이메일 인증)
+// ─────────────────────────────────────────────
+model EmailVerification {
+  id        Int      @id @default(autoincrement())
+  email     String   @db.VarChar(150)
+  code      String   @db.VarChar(6)
+  expiresAt DateTime @map("expires_at")
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([email, code])
+  @@map("email_verifications")
+}
