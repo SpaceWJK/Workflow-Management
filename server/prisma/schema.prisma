@@ -55,6 +55,7 @@ model Project {
   creator User?           @relation("ProjectCreator", fields: [createdBy], references: [id])
   tasks   Task[]
   members ProjectMember[]
+  builds  Build[]
 
   @@map("projects")
 }
@@ -91,6 +92,7 @@ model Task {
   issues       Issue[]
   dependsOn    TaskDependency[] @relation("DependentTask")
   dependedBy   TaskDependency[] @relation("DependencyTarget")
+  buildLinks   TaskBuildLink[]
 
   @@index([projectId])
   @@index([assigneeId])
@@ -324,4 +326,70 @@ model EmailVerification {
 
   @@index([email, code])
   @@map("email_verifications")
+}
+
+// ─────────────────────────────────────────────
+// Build (빌드 = 수급 차수)
+// ─────────────────────────────────────────────
+model Build {
+  id           Int       @id @default(autoincrement())
+  projectId    Int       @map("project_id")
+  buildOrder   Int       @map("build_order")
+  receivedDate DateTime  @map("received_date") @db.Date
+  updateTarget DateTime  @map("update_target") @db.Date
+  status       String    @default("RECEIVED") @db.VarChar(50)
+  memo         String?   @db.Text
+  version      Int       @default(0)
+  isDeleted    Boolean   @default(false) @map("is_deleted")
+  createdBy    Int?      @map("created_by")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  project       Project        @relation(fields: [projectId], references: [id])
+  buildVersions BuildVersion[]
+  taskLinks     TaskBuildLink[]
+
+  @@unique([projectId, updateTarget, buildOrder])
+  @@index([projectId])
+  @@index([projectId, updateTarget])
+  @@index([status])
+  @@map("builds")
+}
+
+// ─────────────────────────────────────────────
+// BuildVersion (개별 빌드 버전)
+// ─────────────────────────────────────────────
+model BuildVersion {
+  id        Int      @id @default(autoincrement())
+  buildId   Int      @map("build_id")
+  buildType String   @map("build_type") @db.VarChar(50)
+  platform  String?  @db.VarChar(20)
+  cdnType   String?  @map("cdn_type") @db.VarChar(100)
+  version   String   @db.VarChar(100)
+  note      String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  build Build @relation(fields: [buildId], references: [id])
+
+  @@index([buildId])
+  @@map("build_versions")
+}
+
+// ─────────────────────────────────────────────
+// TaskBuildLink (일감-빌드 M:N)
+// ─────────────────────────────────────────────
+model TaskBuildLink {
+  id        Int      @id @default(autoincrement())
+  taskId    Int      @map("task_id")
+  buildId   Int      @map("build_id")
+  createdBy Int?     @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  task  Task  @relation(fields: [taskId], references: [id])
+  build Build @relation(fields: [buildId], references: [id])
+
+  @@unique([taskId, buildId])
+  @@index([buildId])
+  @@map("task_build_links")
 }

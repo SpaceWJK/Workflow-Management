@@ -38,7 +38,14 @@ export function validate(schema: ValidationSchema) {
         }
       } else {
         // 파싱 성공: 변환/기본값이 적용된 데이터로 교체
-        (req as unknown as Record<string, unknown>)[target] = result.data;
+        if (target === 'query') {
+          // Express의 req.query는 getter-only이므로 Object.assign으로 덮어쓴다
+          const q = req.query as Record<string, unknown>;
+          for (const key of Object.keys(q)) delete q[key];
+          Object.assign(q, result.data);
+        } else {
+          (req as unknown as Record<string, unknown>)[target] = result.data;
+        }
       }
     }
 

@@ -93,6 +93,14 @@ export async function getTaskById(id: number) {
       project: { select: { id: true, name: true } },
       testTypes: true,
       progressLogs: { orderBy: { changedAt: 'desc' }, take: 50 },
+      buildLinks: {
+        where: { build: { isDeleted: false } },
+        include: {
+          build: {
+            select: { id: true, buildOrder: true, updateTarget: true, status: true, project: { select: { id: true, name: true } } },
+          },
+        },
+      },
     },
   });
 

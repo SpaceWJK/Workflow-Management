@@ -3,7 +3,7 @@
 // ============================================================
 
 import type { Server as SocketIOServer } from 'socket.io';
-import type { ServerToClientEvents, ClientToServerEvents, TaskStatus } from '../types/index.js';
+import type { ServerToClientEvents, ClientToServerEvents, TaskStatus, BuildStatus } from '../types/index.js';
 
 let io: SocketIOServer<ClientToServerEvents, ServerToClientEvents> | null = null;
 
@@ -51,6 +51,22 @@ export function emitMemberStatusChanged(userId: number | string, status: string)
 
 export function emitProjectUpdated(project: unknown): void {
   io?.emit('project:updated', { project });
+}
+
+export function emitBuildCreated(build: unknown): void {
+  io?.emit('build:created', { build });
+}
+
+export function emitBuildUpdated(build: unknown): void {
+  io?.emit('build:updated', { build });
+}
+
+export function emitBuildDeleted(buildId: number | string): void {
+  io?.emit('build:deleted', { buildId: String(buildId) });
+}
+
+export function emitBuildStatusChanged(buildId: number | string, from: BuildStatus, to: BuildStatus): void {
+  io?.emit('build:statusChanged', { buildId: String(buildId), from, to });
 }
 
 export function emitDashboardRefresh(reason: string): void {

@@ -154,3 +154,47 @@ export interface ScheduleEvent {
   projectId?: number;
   color?: string;
 }
+
+// ===== Build =====
+export interface Build {
+  id: number;
+  projectId: number;
+  buildOrder: number;
+  receivedDate: string;
+  updateTarget: string;
+  status: BuildStatus;
+  memo?: string;
+  version: number;
+  project?: Pick<Project, 'id' | 'name' | 'color'>;
+  buildVersions?: BuildVersion[];
+  taskLinks?: TaskBuildLink[];
+  _count?: { buildVersions: number; taskLinks: number };
+}
+
+export interface BuildVersion {
+  id: number;
+  buildId: number;
+  buildType: 'APP' | 'CDN';
+  platform?: 'iOS' | 'AOS' | 'PC';
+  cdnType?: string;
+  version: string;
+  note?: string;
+}
+
+export interface TaskBuildLink {
+  id: number;
+  taskId: number;
+  buildId: number;
+  task?: Pick<Task, 'id' | 'title' | 'status' | 'priority' | 'assigneeName'>;
+}
+
+export type BuildStatus = 'RECEIVED' | 'TESTING' | 'TEST_DONE' | 'APPROVED' | 'REJECTED' | 'RELEASED';
+
+export const BUILD_STATUS_MAP: Record<BuildStatus, { label: string; color: string }> = {
+  RECEIVED: { label: '수급', color: 'var(--color-info)' },
+  TESTING: { label: '테스트 중', color: 'var(--color-primary)' },
+  TEST_DONE: { label: '테스트 완료', color: 'var(--color-warning)' },
+  APPROVED: { label: '승인', color: 'var(--color-success)' },
+  REJECTED: { label: '반려', color: 'var(--color-danger)' },
+  RELEASED: { label: '배포 완료', color: '#10b981' },
+};

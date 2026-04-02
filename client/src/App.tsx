@@ -17,6 +17,9 @@ import CalendarPage from './components/calendar/CalendarPage';
 import TeamPage from './components/team/TeamPage';
 import SettingsPage from './components/settings/SettingsPage';
 import AdminPage from './components/admin/AdminPage';
+import BuildListPage from './components/builds/BuildListPage';
+import BuildFormPage from './components/builds/BuildFormPage';
+import BuildDetailPage from './components/builds/BuildDetailPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -68,6 +71,10 @@ function AppInner() {
               <Route path="/tasks/:id/edit" element={<TaskFormPage />} />
               <Route path="/projects" element={<ProjectListPage />} />
               <Route path="/projects/:id" element={<ProjectDetailPage />} />
+              <Route path="/builds" element={<BuildListPage />} />
+              <Route path="/builds/new" element={<BuildFormPage />} />
+              <Route path="/builds/:id" element={<BuildDetailPage />} />
+              <Route path="/builds/:id/edit" element={<BuildFormPage />} />
               <Route path="/calendar" element={<CalendarPage />} />
               <Route path="/team" element={<TeamPage />} />
               <Route path="/settings" element={<SettingsPage />} />

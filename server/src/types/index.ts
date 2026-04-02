@@ -62,6 +62,33 @@ export type LeaveType = 'ANNUAL' | 'HALF_DAY_AM' | 'HALF_DAY_PM' | 'SICK' | 'REM
 
 export type LeaveStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED';
 
+// --- Build ---
+
+export type BuildStatus = 'RECEIVED' | 'TESTING' | 'TEST_DONE' | 'APPROVED' | 'REJECTED' | 'RELEASED';
+
+export type BuildType = 'APP' | 'CDN';
+
+export type Platform = 'iOS' | 'AOS' | 'PC';
+
+export const VALID_BUILD_TRANSITIONS: Record<BuildStatus, BuildStatus[]> = {
+  RECEIVED: ['TESTING'],
+  TESTING: ['TEST_DONE', 'REJECTED'],
+  TEST_DONE: ['APPROVED', 'REJECTED'],
+  APPROVED: ['RELEASED'],
+  REJECTED: [],      // 잠금 — 새 차수로 수급
+  RELEASED: [],      // 최종 상태
+};
+
+export interface BuildFilterParams {
+  projectId?: number;
+  status?: BuildStatus;
+  updateTarget?: string;
+  page?: number;
+  size?: number;
+  sortBy?: string;
+  order?: 'asc' | 'desc';
+}
+
 // --- 상태 전이 매트릭스 ---
 
 export const VALID_TRANSITIONS: Record<TaskStatus, TaskStatus[]> = {
@@ -99,6 +126,10 @@ export interface ServerToClientEvents {
   'task:statusChanged': (data: { taskId: string; from: TaskStatus; to: TaskStatus }) => void;
   'team:statusChanged': (data: { userId: string; status: string }) => void;
   'project:updated': (data: { project: unknown }) => void;
+  'build:created': (data: { build: unknown }) => void;
+  'build:updated': (data: { build: unknown }) => void;
+  'build:deleted': (data: { buildId: string }) => void;
+  'build:statusChanged': (data: { buildId: string; from: BuildStatus; to: BuildStatus }) => void;
   'dashboard:refresh': (data: { reason: string }) => void;
 }
 

@@ -6,6 +6,7 @@ import TaskTestTypeRepeater from './TaskTestTypeRepeater';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { useTask, useCreateTask, useUpdateTask } from '../../hooks/useTasks';
 import { useProjects } from '../../hooks/useProjects';
+import { useUpdateTargets, useBuildsByTarget, useLinkTasks } from '../../hooks/useBuilds';
 import { PRIORITY_MAP, TASK_STATUS_MAP, type Priority, type TaskStatus, type TaskTestType } from '../../types';
 import dayjs from 'dayjs';
 
@@ -20,6 +21,8 @@ interface FormData {
   dueDate: string;
   memo: string;
   testTypes: Partial<TaskTestType>[];
+  buildTarget: string;
+  buildIds: number[];
 }
 
 const INITIAL: FormData = {
@@ -33,6 +36,8 @@ const INITIAL: FormData = {
   dueDate: dayjs().add(7, 'day').format('YYYY-MM-DD'),
   memo: '',
   testTypes: [],
+  buildTarget: '',
+  buildIds: [],
 };
 
 export default function TaskFormPage() {
@@ -48,8 +53,17 @@ export default function TaskFormPage() {
   const [form, setForm] = useState<FormData>(INITIAL);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const selectedProjectId = form.projectId ? Number(form.projectId) : undefined;
+  const { data: updateTargets = [] } = useUpdateTargets(selectedProjectId);
+  const { data: targetBuilds = [] } = useBuildsByTarget(selectedProjectId, form.buildTarget || undefined);
+  const linkTasks = useLinkTasks();
+
   useEffect(() => {
     if (isEdit && existingTask) {
+      const linkedBuildIds = (existingTask.buildLinks || [])
+        .map((bl: { buildId?: number; build?: { id: number } }) => bl.build?.id ?? bl.buildId)
+        .filter(Boolean) as number[];
+      const firstBuildTarget = (existingTask.buildLinks || [])?.[0]?.build?.updateTarget || '';
       setForm({
         title: existingTask.title,
         description: existingTask.description || '',
@@ -61,6 +75,8 @@ export default function TaskFormPage() {
         dueDate: existingTask.dueDate,
         memo: existingTask.memo || '',
         testTypes: existingTask.testTypes || [],
+        buildTarget: firstBuildTarget ? dayjs(firstBuildTarget).format('YYYY-MM-DD') : '',
+        buildIds: linkedBuildIds,
       });
     }
   }, [isEdit, existingTask]);
@@ -74,7 +90,19 @@ export default function TaskFormPage() {
   }, [form.testTypes]);
 
   const setField = <K extends keyof FormData>(key: K, value: FormData[K]) => {
-    setForm((f) => ({ ...f, [key]: value }));
+    setForm((f) => {
+      const next = { ...f, [key]: value };
+      // Reset build fields when project changes
+      if (key === 'projectId') {
+        next.buildTarget = '';
+        next.buildIds = [];
+      }
+      // Reset buildIds when target changes
+      if (key === 'buildTarget') {
+        next.buildIds = [];
+      }
+      return next;
+    });
     setErrors((e) => {
       const next = { ...e };
       delete next[key];
@@ -114,9 +142,19 @@ export default function TaskFormPage() {
     };
 
     if (isEdit) {
-      await updateTask.mutateAsync({ id: Number(id), ...payload });
+      await updateTask.mutateAsync({ id: Number(id), ...payload, version: existingTask?.version ?? 0 });
     } else {
-      await createTask.mutateAsync(payload);
+      const result = await createTask.mutateAsync(payload);
+      // Link builds if selected
+      if (form.buildIds.length > 0 && result.data?.id) {
+        for (const buildId of form.buildIds) {
+          try {
+            await linkTasks.mutateAsync({ buildId, taskIds: [result.data.id] });
+          } catch {
+            // continue linking other builds
+          }
+        }
+      }
     }
     navigate('/tasks');
   };
@@ -264,6 +302,71 @@ export default function TaskFormPage() {
             </span>
           </div>
         </div>
+
+        {/* Build Link (optional) */}
+        {!isEdit && (
+          <div
+            className="rounded-xl p-5 flex flex-col gap-4"
+            style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+          >
+            <h2 className="text-sm font-semibold mb-1">빌드 연결 (선택사항)</h2>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium" style={{ color: 'var(--color-text-secondary)' }}>업데이트 타겟</label>
+                <select
+                  value={form.buildTarget}
+                  onChange={(e) => setField('buildTarget', e.target.value)}
+                  className={inputClass}
+                  style={inputStyle}
+                  disabled={!form.projectId}
+                >
+                  <option value="">선택</option>
+                  {updateTargets.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+                {!form.projectId && (
+                  <span className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>프로젝트를 먼저 선택하세요</span>
+                )}
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium" style={{ color: 'var(--color-text-secondary)' }}>빌드 선택</label>
+                {!form.buildTarget ? (
+                  <p className="text-xs py-2" style={{ color: 'var(--color-text-secondary)' }}>타겟을 먼저 선택하세요</p>
+                ) : targetBuilds.length === 0 ? (
+                  <p className="text-xs py-2" style={{ color: 'var(--color-text-secondary)' }}>해당 타겟에 빌드가 없습니다</p>
+                ) : (
+                  <div className="flex flex-col gap-1.5 max-h-40 overflow-y-auto rounded-lg p-2" style={{ backgroundColor: 'var(--color-bg)' }}>
+                    {targetBuilds.map((b) => (
+                      <label key={b.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={form.buildIds.includes(b.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setField('buildIds', [...form.buildIds, b.id]);
+                            } else {
+                              setField('buildIds', form.buildIds.filter((bid) => bid !== b.id));
+                            }
+                          }}
+                        />
+                        <span>{b.buildOrder}차 빌드</span>
+                        {b.buildVersions && b.buildVersions.length > 0 && (
+                          <span className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+                            ({b.buildVersions.map((bv) =>
+                              bv.buildType === 'APP' ? `${bv.platform} v${bv.version}` : `${bv.cdnType} v${bv.version}`
+                            ).join(', ')})
+                          </span>
+                        )}
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Memo */}
         <div
