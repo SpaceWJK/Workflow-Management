@@ -21,7 +21,7 @@ export async function getProjects(options?: { page?: number; size?: number }) {
         },
         tasks: {
           where: { isDeleted: false },
-          select: { id: true, status: true, progressTotal: true },
+          select: { id: true, status: true, progressTotal: true, dueDate: true },
         },
         members: {
           include: {
@@ -37,15 +37,21 @@ export async function getProjects(options?: { page?: number; size?: number }) {
   ]);
 
   // 일감 통계 계산
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   const projects = rawProjects.map((p) => {
     const taskCount = p.tasks.length;
     const completedCount = p.tasks.filter((t) => t.status === 'DONE').length;
     const inProgressCount = p.tasks.filter((t) => t.status === 'IN_PROGRESS').length;
+    const delayedCount = p.tasks.filter((t) =>
+      t.status !== 'DONE' && t.status !== 'CANCELED' && t.dueDate && new Date(t.dueDate) < today
+    ).length;
     const progressTotal = taskCount > 0
       ? Math.round(p.tasks.reduce((sum, t) => sum + Number(t.progressTotal || 0), 0) / taskCount)
       : 0;
     const { tasks: _tasks, ...rest } = p;
-    return { ...rest, taskCount, completedCount, inProgressCount, progressTotal };
+    return { ...rest, taskCount, completedCount, inProgressCount, delayedCount, progressTotal };
   });
 
   return {
