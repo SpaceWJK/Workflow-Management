@@ -27,7 +27,7 @@ interface FormData {
 
 const emptyVersion = (): VersionRow => ({
   buildType: 'APP',
-  platform: 'AOS',
+  platform: '',
   cdnType: '',
   version: '',
   note: '',
@@ -63,12 +63,12 @@ export default function BuildFormPage() {
       setForm({
         projectId: String(existingBuild.projectId),
         buildOrder: String(existingBuild.buildOrder),
-        receivedDate: existingBuild.receivedDate,
-        updateTarget: existingBuild.updateTarget || '',
+        receivedDate: existingBuild.receivedDate ? dayjs(existingBuild.receivedDate).format('YYYY-MM-DD') : '',
+        updateTarget: existingBuild.updateTarget ? dayjs(existingBuild.updateTarget).format('YYYY-MM-DD') : '',
         memo: existingBuild.memo || '',
         versions: (existingBuild.buildVersions || []).map((bv: BuildVersion) => ({
           buildType: bv.buildType,
-          platform: bv.platform || 'AOS',
+          platform: bv.platform || '',
           cdnType: bv.cdnType || '',
           version: bv.version,
           note: bv.note || '',

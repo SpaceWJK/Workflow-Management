@@ -137,6 +137,7 @@ router.delete('/:id', authorize('ADMIN', 'MANAGER'), async (req: AuthenticatedRe
 const changeStatusSchema = {
   body: z.object({
     status: z.enum(['RECEIVED', 'TESTING', 'TEST_DONE', 'APPROVED', 'REJECTED', 'RELEASED']),
+    rejectionReason: z.string().optional(),
   }),
 };
 
@@ -145,6 +146,7 @@ router.patch('/:id/status', authorize('ADMIN', 'MANAGER', 'MEMBER'), validate(ch
     const build = await buildService.changeBuildStatus(
       Number(req.params.id),
       req.body.status as BuildStatus,
+      req.body.rejectionReason,
     );
     res.json({ success: true, data: build });
   } catch (err) {

@@ -14,10 +14,11 @@ async function main() {
     { code: 'BVT',           name: '구동 테스트(BVT)',        description: 'Build Verification Test',      sortOrder: 1 },
     { code: 'BAT',           name: '인수 테스트(BAT)',        description: 'Build Acceptance Test',         sortOrder: 2 },
     { code: 'FUNCTIONALITY', name: '기능 테스트(Functionality)', description: '기능 요구사항 검증',         sortOrder: 3 },
-    { code: 'PERFORMANCE',   name: '성능 테스트',             description: '성능/부하 테스트',              sortOrder: 4 },
-    { code: 'COMPATIBILITY', name: '호환 테스트(Compatibility)', description: '기기/OS 호환성 검증',       sortOrder: 5 },
-    { code: 'LOCALIZATION',  name: '현지화 테스트(Localization)', description: '다국어/현지화 검증',       sortOrder: 6 },
-    { code: 'BALANCE',       name: '밸런스 테스트(Balance)',   description: '게임 밸런스 검증',             sortOrder: 7 },
+    { code: 'BUG_VERIFICATION', name: '버그 수정(Bug Verification)', description: '버그 수정 검증',          sortOrder: 4 },
+    { code: 'PERFORMANCE',   name: '성능 테스트',             description: '성능/부하 테스트',              sortOrder: 5 },
+    { code: 'COMPATIBILITY', name: '호환 테스트(Compatibility)', description: '기기/OS 호환성 검증',       sortOrder: 6 },
+    { code: 'LOCALIZATION',  name: '현지화 테스트(Localization)', description: '다국어/현지화 검증',       sortOrder: 7 },
+    { code: 'BALANCE',       name: '밸런스 테스트(Balance)',   description: '게임 밸런스 검증',             sortOrder: 8 },
   ];
 
   // 기존 사용하지 않는 테스트 유형 비활성화

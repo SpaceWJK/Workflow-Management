@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { Plus, RotateCcw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import FilterBar from '../common/FilterBar';
 import LoadingSpinner from '../common/LoadingSpinner';
 import EmptyState from '../common/EmptyState';
-import { useBuilds, type BuildFilter } from '../../hooks/useBuilds';
+import { useBuilds, useUpdateBuildStatus, type BuildFilter } from '../../hooks/useBuilds';
 import { useProjects } from '../../hooks/useProjects';
 import {
   BUILD_STATUS_MAP,
@@ -79,6 +79,7 @@ export default function BuildListPage() {
 
   const { data: builds = [], isLoading } = useBuilds(filter);
   const { data: projects = [] } = useProjects();
+  const updateStatus = useUpdateBuildStatus();
 
   const statusOptions = (Object.keys(BUILD_STATUS_MAP) as BuildStatus[]).map((k) => ({
     value: k,
@@ -165,6 +166,7 @@ export default function BuildListPage() {
                   <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: 'var(--color-text-secondary)' }}>포함 버전</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: 'var(--color-text-secondary)' }}>상태</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: 'var(--color-text-secondary)' }}>연결 일감</th>
+                  <th className="text-right px-4 py-3 text-xs font-semibold" style={{ color: 'var(--color-text-secondary)' }}></th>
                 </tr>
               </thead>
               <tbody>
@@ -197,10 +199,41 @@ export default function BuildListPage() {
                       <VersionBadges build={build} />
                     </td>
                     <td className="px-4 py-3">
-                      <BuildStatusBadge status={build.status} />
+                      <div className="flex items-center gap-1.5">
+                        <BuildStatusBadge status={build.status} />
+                        {build.status === 'REJECTED' && build.rejectionReason && (
+                          <span
+                            className="inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium cursor-help"
+                            style={{
+                              backgroundColor: 'color-mix(in srgb, var(--color-danger) 15%, transparent)',
+                              color: 'var(--color-danger)',
+                            }}
+                            title={`반려 사유: ${build.rejectionReason}`}
+                          >
+                            사유
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <TaskLinkCount build={build} />
+                    </td>
+                    <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                      {build.status === 'REJECTED' && (
+                        <button
+                          onClick={() => updateStatus.mutate({ id: build.id, status: 'RECEIVED' })}
+                          disabled={updateStatus.isPending}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-opacity hover:opacity-80 disabled:opacity-50"
+                          style={{
+                            backgroundColor: 'color-mix(in srgb, var(--color-info) 15%, transparent)',
+                            color: 'var(--color-info)',
+                          }}
+                          title="RECEIVED 상태로 재수정"
+                        >
+                          <RotateCcw className="w-3 h-3" />
+                          재수정
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

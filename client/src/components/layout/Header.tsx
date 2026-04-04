@@ -2,7 +2,7 @@ import { Search, Bell, Wifi, WifiOff } from 'lucide-react';
 import dayjs from 'dayjs';
 import { useAuthStore } from '../../stores/authStore';
 import { useAuth } from '../../hooks/useAuth';
-import { getInitials } from '../../lib/utils';
+import UserDropdown from '../common/UserDropdown';
 
 interface HeaderProps {
   connected: boolean;
@@ -60,23 +60,9 @@ export default function Header({ connected }: HeaderProps) {
         </button>
 
         {/* User profile */}
-        <div className="flex items-center gap-2">
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium"
-            style={{ backgroundColor: 'var(--color-primary)', color: '#fff' }}
-          >
-            {user ? getInitials(user.name) : '?'}
-          </div>
-          {user && (
-            <button
-              onClick={logout}
-              className="text-xs hover:underline"
-              style={{ color: 'var(--color-text-secondary)' }}
-            >
-              로그아웃
-            </button>
-          )}
-        </div>
+        {user && (
+          <UserDropdown user={user} onLogout={logout} />
+        )}
       </div>
     </header>
   );

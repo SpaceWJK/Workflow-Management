@@ -60,6 +60,8 @@ export type TestType =
 
 export type LeaveType = 'ANNUAL' | 'HALF_DAY_AM' | 'HALF_DAY_PM' | 'SICK' | 'REMOTE' | 'OTHER';
 
+export type CalendarEventType = 'VACATION' | 'BUSINESS_TRIP' | 'HALF_DAY_AM' | 'HALF_DAY_PM' | 'REMOTE' | 'MEETING' | 'OTHER';
+
 export type LeaveStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED';
 
 // --- Build ---
@@ -75,7 +77,7 @@ export const VALID_BUILD_TRANSITIONS: Record<BuildStatus, BuildStatus[]> = {
   TESTING: ['TEST_DONE', 'REJECTED'],
   TEST_DONE: ['APPROVED', 'REJECTED'],
   APPROVED: ['RELEASED'],
-  REJECTED: [],      // 잠금 — 새 차수로 수급
+  REJECTED: ['RECEIVED'],  // 재수정 허용 — 새 수급으로 재진입
   RELEASED: [],      // 최종 상태
 };
 
@@ -131,6 +133,11 @@ export interface ServerToClientEvents {
   'build:deleted': (data: { buildId: string }) => void;
   'build:statusChanged': (data: { buildId: string; from: BuildStatus; to: BuildStatus }) => void;
   'dashboard:refresh': (data: { reason: string }) => void;
+  'timer:started': (data: { taskId: number; userId: number; logId: number }) => void;
+  'timer:stopped': (data: { taskId: number; userId: number; logId: number; duration: number }) => void;
+  'calendar:eventCreated': (data: { event: unknown }) => void;
+  'calendar:eventUpdated': (data: { event: unknown }) => void;
+  'calendar:eventDeleted': (data: { eventId: number }) => void;
 }
 
 export interface ClientToServerEvents {

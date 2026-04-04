@@ -51,6 +51,39 @@ export function useSocket() {
       queryClient.invalidateQueries();
     });
 
+    // Timer events
+    socket.on('timer:started', () => {
+      queryClient.invalidateQueries({ queryKey: ['timer'] });
+    });
+    socket.on('timer:stopped', () => {
+      queryClient.invalidateQueries({ queryKey: ['timer'] });
+    });
+
+    // Calendar events
+    socket.on('calendar:eventCreated', () => {
+      queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
+    });
+    socket.on('calendar:eventUpdated', () => {
+      queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
+    });
+    socket.on('calendar:eventDeleted', () => {
+      queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
+    });
+
+    // Build events
+    socket.on('build:created', () => {
+      queryClient.invalidateQueries({ queryKey: ['builds'] });
+    });
+    socket.on('build:updated', () => {
+      queryClient.invalidateQueries({ queryKey: ['builds'] });
+    });
+    socket.on('build:deleted', () => {
+      queryClient.invalidateQueries({ queryKey: ['builds'] });
+    });
+    socket.on('build:statusChanged', () => {
+      queryClient.invalidateQueries({ queryKey: ['builds'] });
+    });
+
     if (!socket.connected) {
       socket.connect();
     }
@@ -67,6 +100,15 @@ export function useSocket() {
       socket.off('project:updated');
       socket.off('team:statusChanged');
       socket.off('dashboard:refresh');
+      socket.off('timer:started');
+      socket.off('timer:stopped');
+      socket.off('calendar:eventCreated');
+      socket.off('calendar:eventUpdated');
+      socket.off('calendar:eventDeleted');
+      socket.off('build:created');
+      socket.off('build:updated');
+      socket.off('build:deleted');
+      socket.off('build:statusChanged');
     };
   }, [isAuthenticated, queryClient]);
 

@@ -12,10 +12,12 @@ import taskRoutes from './routes/tasks.js';
 import projectRoutes from './routes/projects.js';
 import teamRoutes from './routes/team.js';
 import calendarRoutes from './routes/calendar.js';
+import calendarEventRoutes from './routes/calendar-events.js';
 import leaveRoutes from './routes/leaves.js';
 import settingsRoutes from './routes/settings.js';
 import adminRoutes from './routes/admin.js';
 import buildRoutes from './routes/builds.js';
+import timerRoutes from './routes/timer.js';
 import { globalErrorHandler, notFoundHandler } from './middleware/error.js';
 
 export function createApp() {
@@ -69,8 +71,10 @@ export function createApp() {
   // --- API 라우트 ---
   app.use('/api/auth', authRoutes);
   app.use('/api/tasks', taskRoutes);
+  app.use('/api/tasks', timerRoutes);       // 타이머: /api/tasks/:taskId/timer/*
   app.use('/api/projects', projectRoutes);
   app.use('/api/team', teamRoutes);
+  app.use('/api/calendar/events', calendarEventRoutes);  // calendarRoutes 보다 먼저 — 경로 충돌 방지
   app.use('/api/calendar', calendarRoutes);
   app.use('/api/leaves', leaveRoutes);
   app.use('/api/settings', settingsRoutes);

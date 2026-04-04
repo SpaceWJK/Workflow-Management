@@ -220,7 +220,11 @@ export async function deleteBuild(id: number) {
 
 // --- 상태 변경 ---
 
-export async function changeBuildStatus(id: number, newStatus: BuildStatus) {
+export async function changeBuildStatus(
+  id: number,
+  newStatus: BuildStatus,
+  rejectionReason?: string,
+) {
   const build = await prisma.build.findFirst({ where: { id, isDeleted: false } });
   if (!build) throw new NotFoundError('Build');
 
@@ -234,18 +238,57 @@ export async function changeBuildStatus(id: number, newStatus: BuildStatus) {
     );
   }
 
+  // REJECTED 전이 시 rejectionReason 필수
+  if (newStatus === 'REJECTED') {
+    if (!rejectionReason || rejectionReason.trim() === '') {
+      throw new AppError(400, 'REJECTED 상태로 변경하려면 rejectionReason이 필요합니다.');
+    }
+  }
+
+  // rejectionHistory 구성 (기존 배열에 append)
+  const existingHistory = Array.isArray(build.rejectionHistory) ? build.rejectionHistory : [];
+  const newHistory =
+    newStatus === 'REJECTED'
+      ? [...existingHistory, { reason: rejectionReason, rejectedAt: new Date().toISOString(), fromStatus: currentStatus }]
+      : existingHistory;
+
   const updatedBuild = await prisma.build.update({
     where: { id },
     data: {
       status: newStatus,
+      ...(newStatus === 'REJECTED' ? { rejectionReason, rejectionHistory: newHistory } : {}),
       version: { increment: 1 },
       updatedAt: new Date(),
     },
     include: {
       project: { select: { id: true, name: true, color: true } },
       buildVersions: true,
+      taskLinks: {
+        include: {
+          task: { select: { id: true, assigneeId: true, title: true } },
+        },
+      },
     },
   });
+
+  // REJECTED 시 연결 일감에 Notification 생성
+  if (newStatus === 'REJECTED') {
+    const notifications = updatedBuild.taskLinks
+      .filter((link) => link.task.assigneeId !== null)
+      .map((link) =>
+        prisma.notification.create({
+          data: {
+            type: 'BUILD_REJECTED',
+            title: '빌드가 반려되었습니다.',
+            message: `빌드(#${id})가 반려되었습니다. 사유: ${rejectionReason}`,
+            targetType: 'BUILD',
+            targetId: id,
+            userId: link.task.assigneeId as number,
+          },
+        }),
+      );
+    await Promise.all(notifications);
+  }
 
   emitBuildStatusChanged(id, currentStatus, newStatus);
   emitDashboardRefresh('build:statusChanged');

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Shield, UserCheck, UserX, ChevronDown, KeyRound, Loader2 } from 'lucide-react';
 import { api } from '../../lib/api';
+import { useProjects } from '../../hooks/useProjects';
 import { formatDate } from '../../lib/utils';
 import LoadingSpinner from '../common/LoadingSpinner';
 import EmptyState from '../common/EmptyState';
@@ -13,8 +14,10 @@ interface AdminUser {
   email: string;
   role: string;
   teamStatus: string;
+  team?: string;
   isActive: boolean;
   createdAt: string;
+  projectIds?: number[];
   _count: { assignedTasks: number };
 }
 
@@ -38,6 +41,11 @@ export default function AdminPage() {
   const queryClient = useQueryClient();
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [roleDropdownId, setRoleDropdownId] = useState<number | null>(null);
+  const [teamEditId, setTeamEditId] = useState<number | null>(null);
+  const [teamInput, setTeamInput] = useState('');
+  const [projectEditId, setProjectEditId] = useState<number | null>(null);
+
+  const { data: allProjects = [] } = useProjects();
 
   const { data: users = [], isLoading } = useQuery<AdminUser[]>({
     queryKey: ['admin', 'users'],
@@ -66,6 +74,24 @@ export default function AdminPage() {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
     },
   });
+
+  const handleTeamSave = async (userId: number) => {
+    setActionLoading(`team-${userId}`);
+    await api.patch(`/api/admin/users/${userId}/team`, { team: teamInput });
+    setActionLoading(null);
+    setTeamEditId(null);
+    queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+  };
+
+  const handleProjectToggle = async (userId: number, projectId: number, currentIds: number[]) => {
+    const next = currentIds.includes(projectId)
+      ? currentIds.filter((id) => id !== projectId)
+      : [...currentIds, projectId];
+    setActionLoading(`project-${userId}`);
+    await api.patch(`/api/admin/users/${userId}/projects`, { projectIds: next });
+    setActionLoading(null);
+    queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+  };
 
   if (isLoading) return <LoadingSpinner size="lg" className="h-64" />;
 
@@ -163,6 +189,8 @@ export default function AdminPage() {
                   <th className="text-left px-5 py-3 text-xs font-semibold" style={{ color: 'var(--color-text-secondary)' }}>이름</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold" style={{ color: 'var(--color-text-secondary)' }}>이메일</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold" style={{ color: 'var(--color-text-secondary)' }}>역할</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold" style={{ color: 'var(--color-text-secondary)' }}>소속팀</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold" style={{ color: 'var(--color-text-secondary)' }}>담당 프로젝트</th>
                   <th className="text-center px-5 py-3 text-xs font-semibold" style={{ color: 'var(--color-text-secondary)' }}>진행 일감</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold" style={{ color: 'var(--color-text-secondary)' }}>가입일</th>
                   <th className="text-right px-5 py-3 text-xs font-semibold" style={{ color: 'var(--color-text-secondary)' }}>관리</th>
@@ -209,6 +237,89 @@ export default function AdminPage() {
                         </div>
                       )}
                     </td>
+                    {/* 소속팀 */}
+                    <td className="px-5 py-3 relative">
+                      {teamEditId === u.id ? (
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="text"
+                            value={teamInput}
+                            onChange={(e) => setTeamInput(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Enter') handleTeamSave(u.id); if (e.key === 'Escape') setTeamEditId(null); }}
+                            className="px-2 py-1 rounded text-xs outline-none w-24"
+                            style={{ backgroundColor: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text)' }}
+                            placeholder="팀명"
+                            autoFocus
+                          />
+                          <button
+                            onClick={() => handleTeamSave(u.id)}
+                            disabled={actionLoading === `team-${u.id}`}
+                            className="text-xs px-1.5 py-0.5 rounded"
+                            style={{ backgroundColor: 'var(--color-primary)', color: '#fff' }}
+                          >
+                            저장
+                          </button>
+                          <button onClick={() => setTeamEditId(null)} className="text-xs px-1 py-0.5 rounded hover:bg-[var(--color-surface-hover)]">✕</button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => { setTeamEditId(u.id); setTeamInput(u.team ?? ''); }}
+                          className="text-xs px-2 py-1 rounded-md hover:bg-[var(--color-surface-hover)] transition-colors"
+                          style={{ color: u.team ? 'var(--color-text)' : 'var(--color-text-secondary)' }}
+                        >
+                          {u.team || '미지정'}
+                        </button>
+                      )}
+                    </td>
+
+                    {/* 담당 프로젝트 */}
+                    <td className="px-5 py-3 relative">
+                      {projectEditId === u.id ? (
+                        <div
+                          className="absolute z-10 left-0 top-0 mt-8 w-56 rounded-lg py-1 shadow-lg"
+                          style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+                        >
+                          <div className="px-3 py-2 text-xs font-semibold" style={{ color: 'var(--color-text-secondary)' }}>
+                            담당 프로젝트 선택
+                          </div>
+                          {allProjects.map((p) => {
+                            const checked = (u.projectIds ?? []).includes(p.id);
+                            return (
+                              <label
+                                key={p.id}
+                                className="flex items-center gap-2 px-3 py-1.5 cursor-pointer hover:bg-[var(--color-surface-hover)] transition-colors"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  disabled={actionLoading === `project-${u.id}`}
+                                  onChange={() => handleProjectToggle(u.id, p.id, u.projectIds ?? [])}
+                                  className="rounded"
+                                />
+                                <span className="text-xs">{p.name}</span>
+                              </label>
+                            );
+                          })}
+                          <div className="border-t mt-1 pt-1" style={{ borderColor: 'var(--color-border)' }}>
+                            <button
+                              onClick={() => setProjectEditId(null)}
+                              className="w-full text-left px-3 py-1.5 text-xs hover:bg-[var(--color-surface-hover)]"
+                              style={{ color: 'var(--color-text-secondary)' }}
+                            >
+                              닫기
+                            </button>
+                          </div>
+                        </div>
+                      ) : null}
+                      <button
+                        onClick={() => setProjectEditId(projectEditId === u.id ? null : u.id)}
+                        className="flex items-center gap-1 text-xs px-2 py-1 rounded-md hover:bg-[var(--color-surface-hover)] transition-colors"
+                      >
+                        {(u.projectIds ?? []).length > 0 ? `${(u.projectIds ?? []).length}개` : '미지정'}
+                        <ChevronDown className="w-3 h-3" />
+                      </button>
+                    </td>
+
                     <td className="px-5 py-3 text-center">{u._count.assignedTasks}</td>
                     <td className="px-5 py-3" style={{ color: 'var(--color-text-secondary)' }}>{formatDate(u.createdAt)}</td>
                     <td className="px-5 py-3">

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Edit, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import ConfirmDialog from '../common/ConfirmDialog';
+import RejectionModal from '../common/RejectionModal';
 import LoadingSpinner from '../common/LoadingSpinner';
 import EmptyState from '../common/EmptyState';
 import { useBuild, useDeleteBuild, useUpdateBuildStatus } from '../../hooks/useBuilds';
@@ -16,9 +17,12 @@ const STATUS_TRANSITIONS: Record<BuildStatus, BuildStatus[]> = {
   TESTING: ['TEST_DONE', 'REJECTED'],
   TEST_DONE: ['APPROVED', 'REJECTED'],
   APPROVED: ['RELEASED'],
-  REJECTED: [],
+  REJECTED: ['RECEIVED'],
   RELEASED: [],
 };
+
+/** 반려 사유가 필요한 전환 */
+const REQUIRES_REJECTION: BuildStatus[] = ['REJECTED'];
 
 function BuildStatusBadge({ status }: { status: BuildStatus }) {
   const meta = BUILD_STATUS_MAP[status];
@@ -73,6 +77,7 @@ export default function BuildDetailPage() {
   const deleteBuild = useDeleteBuild();
   const updateStatus = useUpdateBuildStatus();
   const [showDelete, setShowDelete] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState<BuildStatus | null>(null);
 
   if (isLoading) return <LoadingSpinner size="lg" className="h-64" />;
   if (!build) return <EmptyState title="빌드를 찾을 수 없습니다" />;
@@ -83,7 +88,17 @@ export default function BuildDetailPage() {
   };
 
   const handleStatusChange = async (newStatus: BuildStatus) => {
+    if (REQUIRES_REJECTION.includes(newStatus)) {
+      setPendingStatus(newStatus);
+      return;
+    }
     await updateStatus.mutateAsync({ id: build.id, status: newStatus });
+  };
+
+  const handleRejectionSubmit = async (reason: string) => {
+    if (!pendingStatus) return;
+    await updateStatus.mutateAsync({ id: build.id, status: pendingStatus, rejectionReason: reason });
+    setPendingStatus(null);
   };
 
   const validTransitions = STATUS_TRANSITIONS[build.status] || [];
@@ -312,6 +327,38 @@ export default function BuildDetailPage() {
         </div>
       )}
 
+      {/* Rejection history */}
+      {build.rejectionHistory && build.rejectionHistory.length > 0 && (
+        <div
+          className="rounded-xl p-5 flex flex-col gap-3"
+          style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+        >
+          <h3 className="text-sm font-semibold" style={{ color: 'var(--color-danger)' }}>반려 이력</h3>
+          <div className="flex flex-col gap-2">
+            {build.rejectionHistory.map((entry, i) => (
+              <div
+                key={i}
+                className="rounded-lg p-3 text-sm"
+                style={{
+                  backgroundColor: 'color-mix(in srgb, var(--color-danger) 8%, var(--color-bg))',
+                  border: '1px solid color-mix(in srgb, var(--color-danger) 20%, transparent)',
+                }}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-medium" style={{ color: 'var(--color-text-secondary)' }}>
+                    {entry.rejectedBy}
+                  </span>
+                  <span className="text-xs tabular-nums" style={{ color: 'var(--color-text-secondary)' }}>
+                    {formatDate(entry.rejectedAt, 'YYYY-MM-DD HH:mm')}
+                  </span>
+                </div>
+                <p>{entry.reason}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Delete confirm */}
       <ConfirmDialog
         open={showDelete}
@@ -321,6 +368,14 @@ export default function BuildDetailPage() {
         variant="danger"
         onConfirm={handleDelete}
         onCancel={() => setShowDelete(false)}
+      />
+
+      {/* Rejection modal */}
+      <RejectionModal
+        isOpen={!!pendingStatus}
+        onClose={() => setPendingStatus(null)}
+        onSubmit={handleRejectionSubmit}
+        isPending={updateStatus.isPending}
       />
     </motion.div>
   );

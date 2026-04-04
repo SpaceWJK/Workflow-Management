@@ -166,9 +166,75 @@ router.get('/me', authenticate, async (req: AuthenticatedRequest, res: Response,
     const { default: prisma } = await import('../prisma.js');
     const user = await prisma.user.findUnique({
       where: { id: req.user!.userId },
-      select: { id: true, email: true, name: true, role: true, teamStatus: true },
+      select: { id: true, email: true, name: true, role: true, teamStatus: true, team: true },
     });
     res.json({ success: true, data: user });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// --- PUT /api/auth/profile — 이름 변경 ---
+const updateProfileSchema = {
+  body: z.object({
+    name: z.string().min(1, '이름은 최소 1자 이상이어야 합니다.').max(100),
+  }),
+};
+
+router.put('/profile', authenticate, validate(updateProfileSchema), async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const { default: prisma } = await import('../prisma.js');
+    const updated = await prisma.user.update({
+      where: { id: req.user!.userId },
+      data: { name: req.body.name },
+      select: { id: true, email: true, name: true, role: true, teamStatus: true, team: true },
+    });
+    res.json({ success: true, data: updated });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// --- PUT /api/auth/password — 비밀번호 변경 ---
+import bcrypt from 'bcryptjs';
+
+const changePasswordSchema = {
+  body: z.object({
+    currentPassword: z.string().min(1, '현재 비밀번호를 입력해주세요.'),
+    newPassword:     z.string().min(6, '새 비밀번호는 최소 6자 이상이어야 합니다.'),
+  }),
+};
+
+const passwordChangeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { success: false, message: '비밀번호 변경 요청이 너무 많습니다. 15분 후 다시 시도해주세요.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+router.put('/password', authenticate, passwordChangeLimiter, validate(changePasswordSchema), async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const { default: prisma } = await import('../prisma.js');
+    const { currentPassword, newPassword } = req.body;
+
+    const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
+    if (!user) {
+      return res.status(404).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!isMatch) {
+      return res.status(400).json({ success: false, message: '현재 비밀번호가 올바르지 않습니다.' });
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+    await prisma.user.update({
+      where: { id: req.user!.userId },
+      data: { passwordHash },
+    });
+
+    res.json({ success: true, message: '비밀번호가 변경되었습니다.' });
   } catch (err) {
     next(err);
   }

@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Edit, Trash2 } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Clock } from 'lucide-react';
 import { useState } from 'react';
 import StatusBadge from '../common/StatusBadge';
 import PriorityBadge from '../common/PriorityBadge';
@@ -9,14 +9,26 @@ import ProgressBar from '../common/ProgressBar';
 import ConfirmDialog from '../common/ConfirmDialog';
 import LoadingSpinner from '../common/LoadingSpinner';
 import EmptyState from '../common/EmptyState';
+import TimerButton from '../common/TimerButton';
 import { useTask, useDeleteTask } from '../../hooks/useTasks';
+import { useTimerStatus } from '../../hooks/useTimer';
 import { formatDate, formatPercent, remainingDays, calcRequiredVelocity, getVelocityColor } from '../../lib/utils';
+
+function formatSeconds(total: number): string {
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  if (h > 0) return `${h}시간 ${m}분`;
+  if (m > 0) return `${m}분 ${s}초`;
+  return `${s}초`;
+}
 
 export default function TaskDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { data: task, isLoading } = useTask(id ? Number(id) : undefined);
   const deleteTask = useDeleteTask();
+  const { data: timerStatus } = useTimerStatus(id ? Number(id) : undefined);
   const [showDelete, setShowDelete] = useState(false);
 
   if (isLoading) return <LoadingSpinner size="lg" className="h-64" />;
@@ -69,6 +81,59 @@ export default function TaskDetailPage() {
           </button>
         </div>
       </div>
+
+      {/* Timer widget */}
+      <div
+        className="rounded-xl p-4 flex items-center justify-between"
+        style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+      >
+        <div className="flex items-center gap-2">
+          <Clock className="w-4 h-4" style={{ color: 'var(--color-primary)' }} />
+          <span className="text-sm font-semibold">작업 시간</span>
+          {timerStatus && (
+            <span className="text-sm tabular-nums" style={{ color: 'var(--color-text-secondary)' }}>
+              누적 {formatSeconds(timerStatus.totalSeconds)}
+            </span>
+          )}
+        </div>
+        <TimerButton taskId={task.id} />
+      </div>
+
+      {/* Timer logs */}
+      {timerStatus?.logs && timerStatus.logs.length > 0 && (
+        <div
+          className="rounded-xl p-5 flex flex-col gap-3"
+          style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+        >
+          <h3 className="text-sm font-semibold">타이머 기록</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+                  <th className="text-left px-3 py-2 font-semibold" style={{ color: 'var(--color-text-secondary)' }}>시작</th>
+                  <th className="text-left px-3 py-2 font-semibold" style={{ color: 'var(--color-text-secondary)' }}>종료</th>
+                  <th className="text-right px-3 py-2 font-semibold" style={{ color: 'var(--color-text-secondary)' }}>소요</th>
+                </tr>
+              </thead>
+              <tbody>
+                {timerStatus.logs.map((log) => (
+                  <tr key={log.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                    <td className="px-3 py-2 tabular-nums">{formatDate(log.startedAt, 'MM-DD HH:mm')}</td>
+                    <td className="px-3 py-2 tabular-nums">
+                      {log.stoppedAt ? formatDate(log.stoppedAt, 'MM-DD HH:mm') : (
+                        <span style={{ color: 'var(--color-success)' }}>진행 중</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-right tabular-nums">
+                      {log.duration != null ? formatSeconds(log.duration) : '-'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Info cards */}
       <div className="grid grid-cols-2 gap-4">

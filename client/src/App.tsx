@@ -20,6 +20,7 @@ import AdminPage from './components/admin/AdminPage';
 import BuildListPage from './components/builds/BuildListPage';
 import BuildFormPage from './components/builds/BuildFormPage';
 import BuildDetailPage from './components/builds/BuildDetailPage';
+import ProfilePage from './components/profile/ProfilePage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -79,6 +80,7 @@ function AppInner() {
               <Route path="/team" element={<TeamPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/admin" element={<AdminPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
             </Route>
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

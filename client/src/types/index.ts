@@ -6,6 +6,7 @@ export interface User {
   role: string;
   teamStatus: TeamStatus;
   avatarUrl?: string;
+  team?: string;
 }
 
 export type TeamStatus = 'AVAILABLE' | 'IN_MEETING' | 'AWAY' | 'ON_LEAVE' | 'HALF_DAY' | 'REMOTE' | 'BUSINESS_TRIP' | 'OFF_WORK';
@@ -64,6 +65,7 @@ export interface Task {
   project?: Project;
   assignee?: User;
   testTypes?: TaskTestType[];
+  buildLinks?: Array<{ buildId?: number; build?: { id: number; updateTarget?: string } }>;
 }
 
 export type Priority = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
@@ -165,6 +167,8 @@ export interface Build {
   status: BuildStatus;
   memo?: string;
   version: number;
+  rejectionReason?: string;
+  rejectionHistory?: Array<{ reason: string; rejectedBy: string; rejectedAt: string }>;
   project?: Pick<Project, 'id' | 'name' | 'color'>;
   buildVersions?: BuildVersion[];
   taskLinks?: TaskBuildLink[];
@@ -197,4 +201,46 @@ export const BUILD_STATUS_MAP: Record<BuildStatus, { label: string; color: strin
   APPROVED: { label: '승인', color: 'var(--color-success)' },
   REJECTED: { label: '반려', color: 'var(--color-danger)' },
   RELEASED: { label: '배포 완료', color: '#10b981' },
+};
+
+// ===== Timer =====
+export interface TaskTimeLog {
+  id: number;
+  taskId: number;
+  userId: number;
+  startedAt: string;
+  stoppedAt?: string;
+  duration?: number;
+}
+
+export interface TimerStatus {
+  isRunning: boolean;
+  currentLog?: TaskTimeLog & { elapsed: number };
+  totalSeconds: number;
+  logs: TaskTimeLog[];
+}
+
+// ===== Calendar Event =====
+export type CalendarEventType = 'VACATION' | 'BUSINESS_TRIP' | 'HALF_DAY_AM' | 'HALF_DAY_PM' | 'REMOTE' | 'MEETING' | 'OTHER';
+
+export interface CalendarEvent {
+  id: number;
+  userId: number;
+  title: string;
+  type: CalendarEventType;
+  startDate: string;
+  endDate: string;
+  allDay: boolean;
+  memo?: string;
+  user?: Pick<User, 'id' | 'name'>;
+}
+
+export const CALENDAR_EVENT_TYPE_MAP: Record<CalendarEventType, { label: string; color: string }> = {
+  VACATION: { label: '휴가', color: 'var(--color-danger)' },
+  BUSINESS_TRIP: { label: '출장', color: '#f97316' },
+  HALF_DAY_AM: { label: '오전반차', color: 'var(--color-warning)' },
+  HALF_DAY_PM: { label: '오후반차', color: '#eab308' },
+  REMOTE: { label: '재택', color: 'var(--color-success)' },
+  MEETING: { label: '회의', color: 'var(--color-info)' },
+  OTHER: { label: '기타', color: 'var(--color-text-secondary)' },
 };

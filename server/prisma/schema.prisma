@@ -21,6 +21,8 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
+  team            String?          @db.VarChar(50)
+
   assignedTasks   Task[]             @relation("TaskAssignee")
   createdTasks    Task[]             @relation("TaskCreator")
   createdProjects Project[]          @relation("ProjectCreator")
@@ -31,6 +33,8 @@ model User {
   assignedIssues  Issue[]            @relation("IssueAssignee")
   activityLogs    ActivityLog[]
   progressLogs    TaskProgressLog[]
+  timeLogs        TaskTimeLog[]      @relation("TaskTimeLogs")
+  calendarEvents  CalendarEvent[]    @relation("CalendarEvents")
 
   @@map("users")
 }
@@ -93,6 +97,7 @@ model Task {
   dependsOn    TaskDependency[] @relation("DependentTask")
   dependedBy   TaskDependency[] @relation("DependencyTarget")
   buildLinks   TaskBuildLink[]
+  timeLogs     TaskTimeLog[]
 
   @@index([projectId])
   @@index([assigneeId])
@@ -337,9 +342,11 @@ model Build {
   buildOrder   Int       @map("build_order")
   receivedDate DateTime  @map("received_date") @db.Date
   updateTarget DateTime  @map("update_target") @db.Date
-  status       String    @default("RECEIVED") @db.VarChar(50)
-  memo         String?   @db.Text
-  version      Int       @default(0)
+  status           String    @default("RECEIVED") @db.VarChar(50)
+  rejectionReason  String?   @map("rejection_reason") @db.Text
+  rejectionHistory Json?     @map("rejection_history")
+  memo             String?   @db.Text
+  version          Int       @default(0)
   isDeleted    Boolean   @default(false) @map("is_deleted")
   createdBy    Int?      @map("created_by")
   createdAt    DateTime  @default(now()) @map("created_at")
@@ -392,4 +399,48 @@ model TaskBuildLink {
   @@unique([taskId, buildId])
   @@index([buildId])
   @@map("task_build_links")
+}
+
+// ─────────────────────────────────────────────
+// TaskTimeLog (일감 시간 추적)
+// ─────────────────────────────────────────────
+model TaskTimeLog {
+  id        Int       @id @default(autoincrement())
+  taskId    Int       @map("task_id")
+  userId    Int       @map("user_id")
+  startedAt DateTime  @default(now()) @map("started_at")
+  stoppedAt DateTime? @map("stopped_at")
+  duration  Int?      // 초 단위
+
+  task Task @relation(fields: [taskId], references: [id])
+  user User @relation("TaskTimeLogs", fields: [userId], references: [id])
+
+  @@index([taskId])
+  @@index([userId])
+  @@index([userId, stoppedAt])
+  @@index([taskId, stoppedAt])
+  @@map("task_time_logs")
+}
+
+// ─────────────────────────────────────────────
+// CalendarEvent (개인 일정)
+// ─────────────────────────────────────────────
+model CalendarEvent {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("user_id")
+  title     String    @db.VarChar(200)
+  type      String    @db.VarChar(50)
+  startDate DateTime  @map("start_date") @db.Date
+  endDate   DateTime  @map("end_date") @db.Date
+  allDay    Boolean   @default(true) @map("all_day")
+  memo      String?   @db.Text
+  isDeleted Boolean   @default(false) @map("is_deleted")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  user User @relation("CalendarEvents", fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([startDate, endDate])
+  @@map("calendar_events")
 }

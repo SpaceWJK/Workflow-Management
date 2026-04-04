@@ -73,6 +73,26 @@ export function emitDashboardRefresh(reason: string): void {
   io?.emit('dashboard:refresh', { reason });
 }
 
+export function emitTimerStarted(taskId: number, userId: number, logId: number): void {
+  io?.emit('timer:started', { taskId, userId, logId });
+}
+
+export function emitTimerStopped(taskId: number, userId: number, logId: number, duration: number): void {
+  io?.emit('timer:stopped', { taskId, userId, logId, duration });
+}
+
+export function emitCalendarEventCreated(event: unknown): void {
+  io?.emit('calendar:eventCreated', { event });
+}
+
+export function emitCalendarEventUpdated(event: unknown): void {
+  io?.emit('calendar:eventUpdated', { event });
+}
+
+export function emitCalendarEventDeleted(eventId: number): void {
+  io?.emit('calendar:eventDeleted', { eventId });
+}
+
 /**
  * 특정 프로젝트 방에만 이벤트 전송.
  */

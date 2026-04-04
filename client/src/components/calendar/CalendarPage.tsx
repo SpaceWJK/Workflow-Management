@@ -5,9 +5,12 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import dayjs from 'dayjs';
 import MonthCalendarGrid from './MonthCalendarGrid';
 import GanttTimeline from './GanttTimeline';
+import EventModal from './EventModal';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { useTasks } from '../../hooks/useTasks';
 import { useProjects } from '../../hooks/useProjects';
+import { useCalendarEvents } from '../../hooks/useCalendarEvents';
+import type { CalendarEvent } from '../../types';
 
 type ViewMode = 'month' | 'gantt';
 
@@ -16,11 +19,31 @@ export default function CalendarPage() {
   const [mode, setMode] = useState<ViewMode>('month');
   const [year, setYear] = useState(dayjs().year());
   const [month, setMonth] = useState(dayjs().month() + 1);
+  const [eventModalOpen, setEventModalOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string | undefined>();
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | undefined>();
+
+  // 캘린더 이벤트: 현재 월 기준 범위 조회
+  const startDate = dayjs(`${year}-${String(month).padStart(2, '0')}-01`).startOf('month').format('YYYY-MM-DD');
+  const endDate = dayjs(`${year}-${String(month).padStart(2, '0')}-01`).endOf('month').format('YYYY-MM-DD');
+  const { data: calendarEvents = [] } = useCalendarEvents(startDate, endDate);
 
   const { data: tasks = [], isLoading: tasksLoading } = useTasks();
   const { data: projects = [], isLoading: projLoading } = useProjects();
 
   const isLoading = tasksLoading || projLoading;
+
+  const handleDateClick = (date: string) => {
+    setSelectedDate(date);
+    setSelectedEvent(undefined);
+    setEventModalOpen(true);
+  };
+
+  const handleEventClick = (event: CalendarEvent) => {
+    setSelectedEvent(event);
+    setSelectedDate(undefined);
+    setEventModalOpen(true);
+  };
 
   const prevMonth = () => {
     if (month === 1) { setYear(y => y - 1); setMonth(12); }
@@ -102,12 +125,23 @@ export default function CalendarPage() {
             year={year}
             month={month}
             tasks={tasks}
+            calendarEvents={calendarEvents}
             onTaskClick={(id) => navigate(`/tasks/${id}`)}
+            onDateClick={handleDateClick}
+            onEventClick={handleEventClick}
           />
         ) : (
           <GanttTimeline tasks={tasks} projects={projects} />
         )}
       </div>
+
+      {/* Event modal */}
+      <EventModal
+        isOpen={eventModalOpen}
+        onClose={() => setEventModalOpen(false)}
+        event={selectedEvent}
+        defaultDate={selectedDate}
+      />
     </motion.div>
   );
 }

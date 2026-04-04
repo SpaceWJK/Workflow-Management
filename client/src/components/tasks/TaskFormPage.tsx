@@ -71,8 +71,8 @@ export default function TaskFormPage() {
         assigneeName: existingTask.assigneeName || existingTask.assignee?.name || '',
         priority: existingTask.priority,
         status: existingTask.status,
-        startDate: existingTask.startDate,
-        dueDate: existingTask.dueDate,
+        startDate: existingTask.startDate ? dayjs(existingTask.startDate).format('YYYY-MM-DD') : '',
+        dueDate: existingTask.dueDate ? dayjs(existingTask.dueDate).format('YYYY-MM-DD') : '',
         memo: existingTask.memo || '',
         testTypes: existingTask.testTypes || [],
         buildTarget: firstBuildTarget ? dayjs(firstBuildTarget).format('YYYY-MM-DD') : '',
@@ -83,9 +83,9 @@ export default function TaskFormPage() {
 
   // 전체 진행율 = 테스트종류별 진행율 평균
   const progressTotal = useMemo(() => {
-    const withProgress = form.testTypes.filter((t) => t.progress !== undefined);
+    const withProgress = form.testTypes.filter((t) => t.progress !== undefined && t.progress !== null);
     if (withProgress.length === 0) return 0;
-    const sum = withProgress.reduce((acc, t) => acc + (t.progress || 0), 0);
+    const sum = withProgress.reduce((acc, t) => acc + Number(t.progress || 0), 0);
     return Math.round(sum / withProgress.length);
   }, [form.testTypes]);
 
@@ -304,9 +304,8 @@ export default function TaskFormPage() {
           </div>
         </div>
 
-        {/* Build Link (optional) */}
-        {!isEdit && (
-          <div
+        {/* Build Link */}
+        <div
             className="rounded-xl p-5 flex flex-col gap-4"
             style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
           >
@@ -367,7 +366,6 @@ export default function TaskFormPage() {
               </div>
             </div>
           </div>
-        )}
 
         {/* Memo */}
         <div

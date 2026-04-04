@@ -14,6 +14,7 @@ import {
   emitTaskStatusChanged,
   emitDashboardRefresh,
 } from './notification.service.js';
+import { stopTimerByTaskId } from './timer.service.js';
 
 // --- 조회 ---
 
@@ -276,30 +277,81 @@ export async function changeTaskStatus(
     );
   }
 
-  const updatedTask = await prisma.task.update({
-    where: { id },
-    data: {
-      status: newStatus,
-      version: { increment: 1 },
-      updatedAt: new Date(),
-    },
-    include: {
-      assignee: { select: { id: true, name: true, email: true } },
-      project: { select: { id: true, name: true } },
-      testTypes: true,
-    },
-  });
+  // DONE/CANCELED 진입 시 진행 중 타이머 자동 정지 (트랜잭션 전에 수행)
+  if (newStatus === 'DONE' || newStatus === 'CANCELED') {
+    await stopTimerByTaskId(id);
+  }
 
-  // 이력 기록 (ActivityLog에 상태 전이 기록)
-  await prisma.activityLog.create({
-    data: {
-      entityType: 'TASK',
-      entityId: id,
-      actionType: 'STATUS_CHANGE',
-      oldValue: { status: currentStatus },
-      newValue: { status: newStatus },
-      changedBy: userId,
-    },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const updatedTask = await prisma.$transaction(async (tx: any) => {
+    // 1. Task 상태 업데이트
+    const updated = await tx.task.update({
+      where: { id },
+      data: {
+        status: newStatus,
+        version: { increment: 1 },
+        updatedAt: new Date(),
+      },
+      include: {
+        assignee: { select: { id: true, name: true, email: true } },
+        project: { select: { id: true, name: true } },
+        testTypes: true,
+        buildLinks: {
+          where: { build: { isDeleted: false } },
+          include: { build: { select: { id: true, status: true } } },
+        },
+      },
+    });
+
+    // 2. ActivityLog 기록
+    await tx.activityLog.create({
+      data: {
+        entityType: 'TASK',
+        entityId: id,
+        actionType: 'STATUS_CHANGE',
+        oldValue: { status: currentStatus },
+        newValue: { status: newStatus },
+        changedBy: userId,
+      },
+    });
+
+    // 3. 빌드 자동 연동 (순환 방지: 직접 prisma.build.update 사용)
+    if (newStatus === 'IN_PROGRESS') {
+      // 연결 빌드가 RECEIVED 상태이면 TESTING으로 전환
+      for (const link of updated.buildLinks) {
+        if (link.build.status === 'RECEIVED') {
+          await tx.build.update({
+            where: { id: link.build.id },
+            data: { status: 'TESTING', version: { increment: 1 }, updatedAt: new Date() },
+          });
+        }
+      }
+    } else if (newStatus === 'DONE') {
+      // 연결 빌드의 모든 일감이 DONE이면 TESTING → TEST_DONE 전환
+      for (const link of updated.buildLinks) {
+        if (link.build.status === 'TESTING') {
+          // 해당 빌드에 연결된 미완료 일감 수 확인
+          const pendingCount = await tx.taskBuildLink.count({
+            where: {
+              buildId: link.build.id,
+              task: {
+                isDeleted: false,
+                status: { notIn: ['DONE', 'CANCELED'] },
+                id: { not: id }, // 방금 DONE으로 전환한 현재 task 제외
+              },
+            },
+          });
+          if (pendingCount === 0) {
+            await tx.build.update({
+              where: { id: link.build.id },
+              data: { status: 'TEST_DONE', version: { increment: 1 }, updatedAt: new Date() },
+            });
+          }
+        }
+      }
+    }
+
+    return updated;
   });
 
   emitTaskStatusChanged(id, currentStatus, newStatus);

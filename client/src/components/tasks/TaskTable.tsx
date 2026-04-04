@@ -3,6 +3,7 @@ import type { Task } from '../../types';
 import StatusBadge from '../common/StatusBadge';
 import PriorityBadge from '../common/PriorityBadge';
 import ProgressBar from '../common/ProgressBar';
+import TimerButton from '../common/TimerButton';
 import { formatDate, remainingDays } from '../../lib/utils';
 
 interface TaskTableProps {
@@ -27,6 +28,7 @@ export default function TaskTable({ tasks }: TaskTableProps) {
             <th className="text-left py-2.5 px-3 font-medium text-xs">시작일</th>
             <th className="text-left py-2.5 px-3 font-medium text-xs">마감일</th>
             <th className="text-right py-2.5 px-3 font-medium text-xs">남은일</th>
+            <th className="text-center py-2.5 px-3 font-medium text-xs">타이머</th>
           </tr>
         </thead>
         <tbody>
@@ -67,6 +69,9 @@ export default function TaskTable({ tasks }: TaskTableProps) {
                   }}
                 >
                   {days < 0 ? `${Math.abs(days)}일 초과` : days === 0 ? '오늘' : `${days}일`}
+                </td>
+                <td className="py-2.5 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                  <TimerButton taskId={t.id} compact />
                 </td>
               </tr>
             );

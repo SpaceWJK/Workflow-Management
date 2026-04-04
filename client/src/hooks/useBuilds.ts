@@ -59,8 +59,8 @@ export function useDeleteBuild() {
 export function useUpdateBuildStatus() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, status }: { id: number; status: string }) =>
-      api.patch<Build>(`/api/builds/${id}/status`, { status }),
+    mutationFn: ({ id, status, rejectionReason }: { id: number; status: string; rejectionReason?: string }) =>
+      api.patch<Build>(`/api/builds/${id}/status`, { status, ...(rejectionReason ? { rejectionReason } : {}) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['builds'] }),
   });
 }
