@@ -37,28 +37,28 @@ export default function DashboardKPICards({ kpi }: DashboardKPICardsProps) {
       value: kpi.inProgressTasks,
       icon: <Play className="w-4 h-4" />,
       color: 'var(--color-success)',
-      onClick: () => navigate('/tasks?status=in_progress'),
+      onClick: () => navigate('/tasks?status=IN_PROGRESS'),
     },
     {
       title: '지연',
       value: kpi.delayedTasks,
       icon: <AlertTriangle className="w-4 h-4" />,
       color: 'var(--color-danger)',
-      onClick: () => navigate('/tasks?status=delayed'),
+      onClick: () => navigate('/tasks?riskLevel=OVERDUE'),
     },
     {
       title: '오늘 마감',
       value: kpi.dueTodayTasks,
       icon: <CalendarClock className="w-4 h-4" />,
       color: 'var(--color-warning)',
-      onClick: () => navigate('/tasks'),
+      onClick: () => navigate('/tasks?dueToday=true'),
     },
     {
       title: '부재 인원',
       value: kpi.absentMembers,
       icon: <UserX className="w-4 h-4" />,
       color: 'var(--color-text-secondary)',
-      onClick: () => navigate('/team'),
+      onClick: () => navigate('/team?status=ABSENT'),
     },
   ];
 

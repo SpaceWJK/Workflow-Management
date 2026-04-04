@@ -13,7 +13,7 @@ export default function ProjectListPage() {
   const [statusFilter, setStatusFilter] = useState<string>('');
 
   const filtered = statusFilter
-    ? projects.filter((p) => p.status === statusFilter)
+    ? projects.filter((p) => p.status?.toLowerCase() === statusFilter.toLowerCase())
     : projects;
 
   if (isLoading) return <LoadingSpinner size="lg" className="h-64" />;

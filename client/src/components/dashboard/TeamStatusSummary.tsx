@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { TEAM_STATUS_MAP, type TeamStatus, type User } from '../../types';
 import { getInitials } from '../../lib/utils';
 import EmptyState from '../common/EmptyState';
@@ -7,6 +8,8 @@ interface TeamStatusSummaryProps {
 }
 
 export default function TeamStatusSummary({ members }: TeamStatusSummaryProps) {
+  const navigate = useNavigate();
+
   if (!members.length) {
     return <EmptyState title="팀원 정보가 없습니다" />;
   }
@@ -37,8 +40,10 @@ export default function TeamStatusSummary({ members }: TeamStatusSummaryProps) {
           return (
             <div
               key={status}
-              className="p-3 rounded-lg"
+              className="p-3 rounded-lg cursor-pointer transition-colors hover:brightness-90"
               style={{ backgroundColor: 'var(--color-bg)' }}
+              onClick={() => navigate(`/team?status=${status}`)}
+              title={`${meta.label} 팀원 보기`}
             >
               <div className="flex items-center gap-2 mb-2">
                 <span
@@ -53,19 +58,22 @@ export default function TeamStatusSummary({ members }: TeamStatusSummaryProps) {
                 </span>
               </div>
               <div className="flex flex-wrap gap-1">
-                {group.slice(0, 5).map((m) => (
+                {group.slice(0, 8).map((m) => (
                   <div
                     key={m.id}
-                    className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-medium"
+                    className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-medium overflow-hidden"
                     style={{ backgroundColor: meta.color, color: '#fff' }}
                     title={m.name}
                   >
-                    {getInitials(m.name)}
+                    {m.avatarUrl
+                      ? <img src={m.avatarUrl} alt={m.name} className="w-6 h-6 rounded-full object-cover" />
+                      : getInitials(m.name)
+                    }
                   </div>
                 ))}
-                {group.length > 5 && (
-                  <span className="text-[10px] ml-1" style={{ color: 'var(--color-text-secondary)' }}>
-                    +{group.length - 5}
+                {group.length > 8 && (
+                  <span className="text-[10px] ml-1 self-center" style={{ color: 'var(--color-text-secondary)' }}>
+                    +{group.length - 8}
                   </span>
                 )}
               </div>

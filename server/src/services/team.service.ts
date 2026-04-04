@@ -27,6 +27,10 @@ export async function getTeamMembers(options?: { projectId?: number; page?: numb
         email: true,
         role: true,
         teamStatus: true,
+        phone: true,
+        bio: true,
+        avatarUrl: true,
+        team: true,
         projectMembers: {
           include: {
             project: { select: { id: true, name: true } },

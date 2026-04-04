@@ -65,7 +65,7 @@ export async function getTasks(options: GetTasksOptions) {
       where,
       include: {
         assignee: { select: { id: true, name: true, email: true } },
-        project: { select: { id: true, name: true } },
+        project: { select: { id: true, name: true, color: true } },
         testTypes: true,
       },
       orderBy: { [sortBy]: order },
@@ -91,14 +91,14 @@ export async function getTaskById(id: number) {
     where: { id, isDeleted: false },
     include: {
       assignee: { select: { id: true, name: true, email: true } },
-      project: { select: { id: true, name: true } },
+      project: { select: { id: true, name: true, color: true } },
       testTypes: true,
       progressLogs: { orderBy: { changedAt: 'desc' }, take: 50 },
       buildLinks: {
         where: { build: { isDeleted: false } },
         include: {
           build: {
-            select: { id: true, buildOrder: true, updateTarget: true, status: true, project: { select: { id: true, name: true } } },
+            select: { id: true, buildOrder: true, updateTarget: true, status: true, project: { select: { id: true, name: true, color: true } } },
           },
         },
       },
@@ -151,7 +151,7 @@ export async function createTask(data: CreateTaskData, createdBy: number) {
     },
     include: {
       assignee: { select: { id: true, name: true, email: true } },
-      project: { select: { id: true, name: true } },
+      project: { select: { id: true, name: true, color: true } },
       testTypes: true,
     },
   });
@@ -294,7 +294,7 @@ export async function changeTaskStatus(
       },
       include: {
         assignee: { select: { id: true, name: true, email: true } },
-        project: { select: { id: true, name: true } },
+        project: { select: { id: true, name: true, color: true } },
         testTypes: true,
         buildLinks: {
           where: { build: { isDeleted: false } },
@@ -482,7 +482,7 @@ export async function getRiskTasks(projectId?: number) {
     where,
     include: {
       assignee: { select: { id: true, name: true } },
-      project: { select: { id: true, name: true } },
+      project: { select: { id: true, name: true, color: true } },
       testTypes: true,
     },
   });

@@ -43,6 +43,42 @@ router.get('/workload', async (req: AuthenticatedRequest, res: Response, next: N
   }
 });
 
+// --- PATCH /api/team/me/status — 본인 상태 변경 ---
+const ALLOWED_STATUSES = ['AVAILABLE', 'IN_MEETING', 'AWAY', 'ON_LEAVE', 'HALF_DAY', 'REMOTE', 'BUSINESS_TRIP', 'FIELD_WORK', 'OFF_WORK'];
+
+const selfStatusSchema = {
+  body: z.object({
+    status: z.string().refine(s => ALLOWED_STATUSES.includes(s), { message: '허용되지 않는 상태값입니다.' }),
+  }),
+};
+
+router.patch('/me/status', validate(selfStatusSchema), async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const result = await teamService.updateMemberStatus(req.user!.userId, req.body.status);
+    res.json({ success: true, data: result });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// --- POST /api/team/me/clock — 출퇴근 체크 ---
+const clockSchema = {
+  body: z.object({
+    action: z.enum(['IN', 'OUT']),
+  }),
+};
+
+router.post('/me/clock', validate(clockSchema), async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const { action } = req.body;
+    const newStatus = action === 'IN' ? 'AVAILABLE' : 'OFF_WORK';
+    const result = await teamService.updateMemberStatus(req.user!.userId, newStatus);
+    res.json({ success: true, data: { ...result, clockedAt: new Date().toISOString() } });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // --- GET /api/team/:id ---
 router.get('/:id', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {

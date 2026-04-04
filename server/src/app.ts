@@ -3,6 +3,7 @@
 // ============================================================
 
 import express from 'express';
+import path from 'path';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -46,6 +47,10 @@ export function createApp() {
   );
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true }));
+
+  // --- 정적 파일 서빙 (아바타 이미지 등) ---
+  // import.meta.dirname = server/src/ → .. = server/ → public/uploads
+  app.use('/uploads', express.static(path.resolve(import.meta.dirname || '.', '..', 'public', 'uploads')));
 
   // --- 글로벌 Rate Limiting ---
   app.use('/api', rateLimit({

@@ -21,6 +21,10 @@ import BuildListPage from './components/builds/BuildListPage';
 import BuildFormPage from './components/builds/BuildFormPage';
 import BuildDetailPage from './components/builds/BuildDetailPage';
 import ProfilePage from './components/profile/ProfilePage';
+import StatusPage from './components/profile/StatusPage';
+import ClockPage from './components/profile/ClockPage';
+import TodayTasksPage from './components/profile/TodayTasksPage';
+import PasswordPage from './components/profile/PasswordPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -81,6 +85,10 @@ function AppInner() {
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/profile/status" element={<StatusPage />} />
+              <Route path="/profile/clock" element={<ClockPage />} />
+              <Route path="/profile/today" element={<TodayTasksPage />} />
+              <Route path="/profile/password" element={<PasswordPage />} />
             </Route>
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

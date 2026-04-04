@@ -8,6 +8,7 @@ import LoadingSpinner from '../common/LoadingSpinner';
 import { useTasks } from '../../hooks/useTasks';
 import { useProjects } from '../../hooks/useProjects';
 import { useTeam } from '../../hooks/useTeam';
+import { useCalendarEvents } from '../../hooks/useCalendarEvents';
 import type { DashboardKPI } from '../../types';
 import dayjs from 'dayjs';
 
@@ -16,18 +17,25 @@ export default function DashboardPage() {
   const { data: projects = [], isLoading: projectsLoading } = useProjects();
   const { data: members = [], isLoading: teamLoading } = useTeam();
 
+  const today = dayjs().format('YYYY-MM-DD');
+  const { data: calendarEvents = [] } = useCalendarEvents(today, today);
+
   const isLoading = tasksLoading || projectsLoading || teamLoading;
 
-  const today = dayjs().format('YYYY-MM-DD');
+  // 완료/취소 제외한 활성 일감
+  const activeTasks = tasks.filter((t) => t.status !== 'DONE' && t.status !== 'CANCELED');
 
   const kpi: DashboardKPI = {
     totalProjects: projects.length,
     totalTasks: tasks.length,
-    inProgressTasks: tasks.filter((t) => t.status === 'IN_PROGRESS').length,
-    delayedTasks: tasks.filter((t) => t.status === 'ON_HOLD' || t.status === 'CANCELED').length,
-    dueTodayTasks: tasks.filter((t) => t.dueDate === today).length,
+    inProgressTasks: activeTasks.filter((t) => t.status === 'IN_PROGRESS').length,
+    delayedTasks: activeTasks.filter((t) => {
+      const due = t.dueDate?.slice(0, 10);
+      return due && due < today;
+    }).length,
+    dueTodayTasks: activeTasks.filter((t) => t.dueDate?.slice(0, 10) === today).length,
     absentMembers: members.filter(
-      (m) => m.teamStatus === 'ON_LEAVE' || m.teamStatus === 'AWAY'
+      (m) => m.teamStatus === 'ON_LEAVE' || m.teamStatus === 'AWAY' || m.teamStatus === 'OFF_WORK'
     ).length,
   };
 
@@ -56,7 +64,7 @@ export default function DashboardPage() {
         </div>
         <div className="flex flex-col gap-4">
           <TeamStatusSummary members={members} />
-          <TodayScheduleWidget tasks={tasks} />
+          <TodayScheduleWidget tasks={tasks} calendarEvents={calendarEvents} />
         </div>
       </div>
     </motion.div>

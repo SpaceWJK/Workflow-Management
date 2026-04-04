@@ -6,10 +6,12 @@ export interface User {
   role: string;
   teamStatus: TeamStatus;
   avatarUrl?: string;
+  phone?: string;
+  bio?: string;
   team?: string;
 }
 
-export type TeamStatus = 'AVAILABLE' | 'IN_MEETING' | 'AWAY' | 'ON_LEAVE' | 'HALF_DAY' | 'REMOTE' | 'BUSINESS_TRIP' | 'OFF_WORK';
+export type TeamStatus = 'AVAILABLE' | 'IN_MEETING' | 'AWAY' | 'ON_LEAVE' | 'HALF_DAY' | 'REMOTE' | 'BUSINESS_TRIP' | 'FIELD_WORK' | 'OFF_WORK';
 
 export const TEAM_STATUS_MAP: Record<TeamStatus, { label: string; color: string }> = {
   AVAILABLE: { label: '근무중', color: 'var(--color-success)' },
@@ -19,6 +21,7 @@ export const TEAM_STATUS_MAP: Record<TeamStatus, { label: string; color: string 
   HALF_DAY: { label: '반차', color: '#60a5fa' },
   REMOTE: { label: '재택', color: 'var(--color-primary)' },
   BUSINESS_TRIP: { label: '출장', color: '#a855f7' },
+  FIELD_WORK: { label: '외근', color: '#f97316' },
   OFF_WORK: { label: '퇴근', color: 'var(--color-text-secondary)' },
 };
 

@@ -166,7 +166,7 @@ router.get('/me', authenticate, async (req: AuthenticatedRequest, res: Response,
     const { default: prisma } = await import('../prisma.js');
     const user = await prisma.user.findUnique({
       where: { id: req.user!.userId },
-      select: { id: true, email: true, name: true, role: true, teamStatus: true, team: true },
+      select: { id: true, email: true, name: true, role: true, teamStatus: true, team: true, phone: true, bio: true, avatarUrl: true },
     });
     res.json({ success: true, data: user });
   } catch (err) {
@@ -174,20 +174,69 @@ router.get('/me', authenticate, async (req: AuthenticatedRequest, res: Response,
   }
 });
 
-// --- PUT /api/auth/profile — 이름 변경 ---
+// --- PUT /api/auth/profile — 연락처/소개 변경 (이름 변경 불가) ---
 const updateProfileSchema = {
   body: z.object({
-    name: z.string().min(1, '이름은 최소 1자 이상이어야 합니다.').max(100),
+    phone: z.string().max(20).optional().nullable(),
+    bio: z.string().max(500).optional().nullable(),
   }),
 };
 
 router.put('/profile', authenticate, validate(updateProfileSchema), async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const { default: prisma } = await import('../prisma.js');
+    const data: Record<string, unknown> = {};
+    if (req.body.phone !== undefined) data.phone = req.body.phone;
+    if (req.body.bio !== undefined) data.bio = req.body.bio;
     const updated = await prisma.user.update({
       where: { id: req.user!.userId },
-      data: { name: req.body.name },
-      select: { id: true, email: true, name: true, role: true, teamStatus: true, team: true },
+      data,
+      select: { id: true, email: true, name: true, role: true, teamStatus: true, team: true, phone: true, bio: true, avatarUrl: true },
+    });
+    res.json({ success: true, data: updated });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// --- POST /api/auth/avatar — 프로필 이미지 업로드 ---
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+
+const avatarDir = path.resolve(import.meta.dirname || '.', '..', '..', 'public', 'uploads', 'avatars');
+fs.mkdirSync(avatarDir, { recursive: true });
+
+const avatarStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, avatarDir),
+  filename: (req: AuthenticatedRequest, _file, cb) => {
+    const ext = path.extname(_file.originalname).toLowerCase() || '.jpg';
+    cb(null, `user-${req.user!.userId}-${Date.now()}${ext}`);
+  },
+});
+
+const avatarUpload = multer({
+  storage: avatarStorage,
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+  fileFilter: (_req, file, cb) => {
+    const allowed = ['.jpg', '.jpeg', '.png', '.webp'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowed.includes(ext)) cb(null, true);
+    else cb(new Error('jpg, png, webp 파일만 업로드 가능합니다.'));
+  },
+});
+
+router.post('/avatar', authenticate, avatarUpload.single('avatar'), async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: '파일이 없습니다.' });
+    }
+    const { default: prisma } = await import('../prisma.js');
+    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+    const updated = await prisma.user.update({
+      where: { id: req.user!.userId },
+      data: { avatarUrl },
+      select: { id: true, avatarUrl: true },
     });
     res.json({ success: true, data: updated });
   } catch (err) {

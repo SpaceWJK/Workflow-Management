@@ -32,7 +32,26 @@ export default function ProjectHealthList({ projects }: ProjectHealthListProps) 
         border: '1px solid var(--color-border)',
       }}
     >
-      <h3 className="text-sm font-semibold mb-3">프로젝트 건강도</h3>
+      <div className="flex items-center gap-2 mb-3 group relative">
+        <h3 className="text-sm font-semibold">프로젝트 건강도</h3>
+        <span
+          className="w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold cursor-help"
+          style={{ backgroundColor: 'var(--color-bg)', color: 'var(--color-text-secondary)', border: '1px solid var(--color-border)' }}
+        >?</span>
+        <div
+          className="absolute left-0 top-full mt-1 z-30 w-72 p-3 rounded-lg shadow-lg text-xs leading-relaxed opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all"
+          style={{ backgroundColor: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}
+        >
+          <p className="font-semibold mb-1" style={{ color: 'var(--color-text)' }}>프로젝트 건강도 기준</p>
+          <p>완료 일감 / 전체 일감 비율과 지연 일감 수로 위험도를 계산합니다.</p>
+          <ul className="mt-1.5 flex flex-col gap-0.5">
+            <li><span style={{ color: 'var(--color-success)' }}>낮음</span>: 지연 비율 5% 이하</li>
+            <li><span style={{ color: 'var(--color-warning)' }}>중간</span>: 지연 비율 5~15%</li>
+            <li><span style={{ color: '#f97316' }}>높음</span>: 지연 비율 15~30%</li>
+            <li><span style={{ color: 'var(--color-danger)' }}>심각</span>: 지연 비율 30% 초과</li>
+          </ul>
+        </div>
+      </div>
       <div className="flex flex-col gap-3">
         {projects.map((p) => {
           const completionRate = p.taskCount ? Math.round(((p.completedCount ?? 0) / p.taskCount) * 100) : 0;

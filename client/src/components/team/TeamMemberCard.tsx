@@ -13,9 +13,10 @@ interface TeamMemberCardProps {
   member: ExtendedUser;
   taskCount?: number;
   dueTodayCount?: number;
+  onProfileClick?: () => void;
 }
 
-export default function TeamMemberCard({ member, taskCount = 0, dueTodayCount = 0 }: TeamMemberCardProps) {
+export default function TeamMemberCard({ member, taskCount = 0, dueTodayCount = 0, onProfileClick }: TeamMemberCardProps) {
   const statusMeta = TEAM_STATUS_MAP[member.teamStatus] || TEAM_STATUS_MAP.AVAILABLE;
 
   const projects = member.projectMembers
@@ -33,10 +34,15 @@ export default function TeamMemberCard({ member, taskCount = 0, dueTodayCount = 
       <div className="flex items-center gap-3 mb-3">
         <div className="relative">
           <div
-            className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium"
+            className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium cursor-pointer hover:opacity-80 transition-opacity overflow-hidden"
             style={{ backgroundColor: 'var(--color-primary)', color: '#fff' }}
+            onClick={(e) => { e.stopPropagation(); onProfileClick?.(); }}
+            title={`${member.name} 프로필 보기`}
           >
-            {getInitials(member.name)}
+            {member.avatarUrl
+              ? <img src={member.avatarUrl} alt={member.name} className="w-10 h-10 rounded-full object-cover" />
+              : getInitials(member.name)
+            }
           </div>
           <div
             className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2"

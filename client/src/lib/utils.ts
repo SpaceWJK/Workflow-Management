@@ -20,7 +20,10 @@ export function formatPercent(value: number): string {
 
 /** Calculate remaining days from today to target date */
 export function remainingDays(dueDate: string): number {
-  return dayjs(dueDate).diff(dayjs().startOf('day'), 'day');
+  // 날짜만 비교 (UTC 시차 무시)
+  const due = dueDate.slice(0, 10);
+  const today = dayjs().format('YYYY-MM-DD');
+  return dayjs(due).diff(dayjs(today), 'day');
 }
 
 /** Calculate expected progress based on start/due dates */
