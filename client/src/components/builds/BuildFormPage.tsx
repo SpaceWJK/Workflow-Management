@@ -322,20 +322,28 @@ export default function BuildFormPage() {
               <div className="grid grid-cols-3 gap-3">
                 {ver.buildType === 'APP' ? (
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-medium" style={{ color: 'var(--color-text-secondary)' }}>플랫폼</label>
+                    <label className="text-xs font-medium" style={{ color: 'var(--color-text-secondary)' }}>플랫폼 (복수 선택 가능)</label>
                     <div className="flex items-center gap-3">
-                      {(['iOS', 'AOS', 'PC'] as const).map((p) => (
-                        <label key={p} className="flex items-center gap-1 text-sm cursor-pointer">
-                          <input
-                            type="radio"
-                            name={`platform_${idx}`}
-                            value={p}
-                            checked={ver.platform === p}
-                            onChange={() => setVersionField(idx, 'platform', p)}
-                          />
-                          {p}
-                        </label>
-                      ))}
+                      {(['iOS', 'AOS', 'PC'] as const).map((p) => {
+                        const platforms = ver.platform ? ver.platform.split(',') : [];
+                        const isChecked = platforms.includes(p);
+                        return (
+                          <label key={p} className="flex items-center gap-1 text-sm cursor-pointer">
+                            <input
+                              type="checkbox"
+                              value={p}
+                              checked={isChecked}
+                              onChange={() => {
+                                const next = isChecked
+                                  ? platforms.filter((x) => x !== p)
+                                  : [...platforms, p];
+                                setVersionField(idx, 'platform', next.join(','));
+                              }}
+                            />
+                            {p}
+                          </label>
+                        );
+                      })}
                     </div>
                   </div>
                 ) : (

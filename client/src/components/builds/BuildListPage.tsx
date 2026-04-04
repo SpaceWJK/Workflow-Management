@@ -192,7 +192,7 @@ export default function BuildListPage() {
                     </td>
                     <td className="px-4 py-3 tabular-nums">{build.buildOrder}차</td>
                     <td className="px-4 py-3 tabular-nums">{formatDate(build.receivedDate)}</td>
-                    <td className="px-4 py-3">{build.updateTarget}</td>
+                    <td className="px-4 py-3 tabular-nums">{formatDate(build.updateTarget)}</td>
                     <td className="px-4 py-3">
                       <VersionBadges build={build} />
                     </td>

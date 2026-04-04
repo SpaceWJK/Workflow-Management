@@ -172,29 +172,55 @@ interface UpdateTaskData {
   startDate?: string;
   dueDate?: string;
   progressTotal?: number;
+  memo?: string;
+  testTypes?: { id?: number; testTypeCode: string; progress?: number; note?: string }[];
   version: number; // Optimistic Locking 필수
 }
 
 export async function updateTask(id: number, data: UpdateTaskData) {
-  const { version, ...updateFields } = data;
+  const { version, testTypes: newTestTypes, ...updateFields } = data;
+
+  // 스칼라 필드만 추출 (Date 변환 포함)
+  const scalarData: Record<string, unknown> = {};
+  if (updateFields.title !== undefined) scalarData.title = updateFields.title;
+  if (updateFields.description !== undefined) scalarData.description = updateFields.description;
+  if (updateFields.assigneeId !== undefined) scalarData.assigneeId = updateFields.assigneeId;
+  if (updateFields.assigneeName !== undefined) scalarData.assigneeName = updateFields.assigneeName;
+  if (updateFields.priority !== undefined) scalarData.priority = updateFields.priority;
+  if (updateFields.memo !== undefined) scalarData.memo = updateFields.memo;
+  if (updateFields.progressTotal !== undefined) scalarData.progressTotal = updateFields.progressTotal;
+  if (updateFields.startDate) scalarData.startDate = new Date(updateFields.startDate);
+  if (updateFields.dueDate) scalarData.dueDate = new Date(updateFields.dueDate);
 
   // Optimistic Locking: version 일치 확인
   const result = await prisma.task.updateMany({
     where: { id, version, isDeleted: false },
     data: {
-      ...updateFields,
-      ...(updateFields.startDate ? { startDate: new Date(updateFields.startDate) } : {}),
-      ...(updateFields.dueDate ? { dueDate: new Date(updateFields.dueDate) } : {}),
+      ...scalarData,
       version: { increment: 1 },
       updatedAt: new Date(),
     },
   });
 
   if (result.count === 0) {
-    // id가 존재하는지 확인
     const exists = await prisma.task.findFirst({ where: { id, isDeleted: false } });
     if (!exists) throw new NotFoundError('Task');
     throw new ConflictError();
+  }
+
+  // testTypes 업데이트: 기존 삭제 후 재생성
+  if (newTestTypes !== undefined) {
+    await prisma.taskTestType.deleteMany({ where: { taskId: id } });
+    if (newTestTypes.length > 0) {
+      await prisma.taskTestType.createMany({
+        data: newTestTypes.map((tt) => ({
+          taskId: id,
+          testTypeCode: tt.testTypeCode,
+          progress: tt.progress || 0,
+          note: tt.note || null,
+        })),
+      });
+    }
   }
 
   const updatedTask = await getTaskById(id);

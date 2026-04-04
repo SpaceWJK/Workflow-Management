@@ -7,6 +7,7 @@ interface TaskTestTypeRepeaterProps {
 }
 
 const TEST_TYPE_OPTIONS = [
+  { code: 'UPDATE',        name: '업데이트 테스트(Update)' },
   { code: 'BVT',           name: '구동 테스트(BVT)' },
   { code: 'BAT',           name: '인수 테스트(BAT)' },
   { code: 'FUNCTIONALITY', name: '기능 테스트(Functionality)' },

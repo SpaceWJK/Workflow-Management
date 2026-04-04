@@ -10,6 +10,7 @@ async function main() {
   // 1. 테스트 유형 코드 (TestTypeCode) — 7종
   // ─────────────────────────────────────────────
   const testTypeCodes = [
+    { code: 'UPDATE',        name: '업데이트 테스트(Update)',  description: 'Update Test',                  sortOrder: 0 },
     { code: 'BVT',           name: '구동 테스트(BVT)',        description: 'Build Verification Test',      sortOrder: 1 },
     { code: 'BAT',           name: '인수 테스트(BAT)',        description: 'Build Acceptance Test',         sortOrder: 2 },
     { code: 'FUNCTIONALITY', name: '기능 테스트(Functionality)', description: '기능 요구사항 검증',         sortOrder: 3 },
@@ -93,22 +94,7 @@ async function main() {
   ];
 
   for (const p of projects) {
-    await prisma.project.upsert({
-      where: { id: 0 }, // 이 upsert는 실패할 수 있으므로 findFirst + create 패턴 사용
-      update: {},
-      create: {
-        name: p.name,
-        description: p.description,
-        status: 'ACTIVE',
-        color: p.color,
-        createdBy: wjkim.id,
-      },
-    });
-  }
-
-  // 실제로는 name으로 찾아서 없으면 생성
-  for (const p of projects) {
-    const existing = await prisma.project.findFirst({ where: { name: p.name } });
+    const existing = await prisma.project.findFirst({ where: { name: p.name, isDeleted: false } });
     if (!existing) {
       await prisma.project.create({
         data: {
@@ -118,6 +104,11 @@ async function main() {
           color: p.color,
           createdBy: wjkim.id,
         },
+      });
+    } else {
+      await prisma.project.update({
+        where: { id: existing.id },
+        data: { description: p.description, color: p.color },
       });
     }
   }

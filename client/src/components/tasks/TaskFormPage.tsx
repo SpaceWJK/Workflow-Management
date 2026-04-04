@@ -142,7 +142,8 @@ export default function TaskFormPage() {
     };
 
     if (isEdit) {
-      await updateTask.mutateAsync({ id: Number(id), ...payload, version: existingTask?.version ?? 0 });
+      const { status: _status, ...editPayload } = payload;
+      await updateTask.mutateAsync({ id: Number(id), ...editPayload, version: existingTask?.version ?? 0 });
     } else {
       const result = await createTask.mutateAsync(payload);
       // Link builds if selected
