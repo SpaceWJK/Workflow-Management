@@ -53,13 +53,18 @@ async function request<T>(
     } else {
       localStorage.removeItem('token');
       localStorage.removeItem('refreshToken');
-      window.location.href = '/login';
+      const base = import.meta.env.BASE_URL || '/';
+      window.location.href = `${base}login`;
       return { success: false, data: null as T, message: 'Unauthorized' };
     }
   }
 
-  const json = await res.json();
-  return json as ApiResponse<T>;
+  try {
+    const json = await res.json();
+    return json as ApiResponse<T>;
+  } catch {
+    return { success: false, data: null as T, message: `서버 오류 (${res.status})` };
+  }
 }
 
 // Auth - 회원가입 관련

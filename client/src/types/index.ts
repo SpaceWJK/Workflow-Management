@@ -178,7 +178,7 @@ export interface Build {
 export interface BuildVersion {
   id: number;
   buildId: number;
-  buildType: 'APP' | 'CDN';
+  buildType: 'APP' | 'CDN' | 'SERVER';
   platform?: 'iOS' | 'AOS' | 'PC';
   cdnType?: string;
   version: string;

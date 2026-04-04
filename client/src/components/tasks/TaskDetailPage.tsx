@@ -118,9 +118,9 @@ export default function TaskDetailPage() {
               <tbody>
                 {timerStatus.logs.map((log) => (
                   <tr key={log.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                    <td className="px-3 py-2 tabular-nums">{formatDate(log.startedAt, 'MM-DD HH:mm')}</td>
+                    <td className="px-3 py-2 tabular-nums">{formatDate(log.startedAt, 'MM-DD HH:mm:ss')}</td>
                     <td className="px-3 py-2 tabular-nums">
-                      {log.stoppedAt ? formatDate(log.stoppedAt, 'MM-DD HH:mm') : (
+                      {log.stoppedAt ? formatDate(log.stoppedAt, 'MM-DD HH:mm:ss') : (
                         <span style={{ color: 'var(--color-success)' }}>진행 중</span>
                       )}
                     </td>
@@ -159,7 +159,10 @@ export default function TaskDetailPage() {
             >
               {days < 0 ? `${Math.abs(days)}일 초과` : days === 0 ? '오늘 마감' : `${days}일`}
             </span>
-            <span style={{ color: 'var(--color-text-secondary)' }}>위험도</span>
+            <span
+              style={{ color: 'var(--color-text-secondary)', cursor: 'help' }}
+              title="마감일까지 남은 기간, 현재 진행율, 상태를 종합하여 자동 산출됩니다. (LOW → MEDIUM → HIGH → CRITICAL)"
+            >위험도 ⓘ</span>
             <span><RiskBadge level={task.riskLevel} /></span>
           </div>
           {task.description && (
@@ -187,7 +190,10 @@ export default function TaskDetailPage() {
 
           <div className="flex flex-col gap-2">
             <div className="flex justify-between text-xs">
-              <span style={{ color: 'var(--color-text-secondary)' }}>기대 진행률</span>
+              <span
+                style={{ color: 'var(--color-text-secondary)', cursor: 'help' }}
+                title="시작일~마감일 기간 중 오늘까지의 경과 비율입니다. 실제 진행률과 비교하여 일정 지연 여부를 판단합니다."
+              >기대 진행률 ⓘ</span>
               <span className="tabular-nums">{formatPercent(task.expectedProgress)}</span>
             </div>
             <ProgressBar value={task.expectedProgress} height="h-2.5" color="var(--color-text-secondary)" />
@@ -195,7 +201,7 @@ export default function TaskDetailPage() {
 
           <div className="grid grid-cols-2 gap-3 mt-2">
             <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--color-bg)' }}>
-              <div className="text-xs mb-1" style={{ color: 'var(--color-text-secondary)' }}>진행 갭</div>
+              <div className="text-xs mb-1" style={{ color: 'var(--color-text-secondary)', cursor: 'help' }} title="실제 진행률 - 기대 진행률. 양수면 앞서가는 중, 음수면 지연 중입니다.">진행 갭 ⓘ</div>
               <div
                 className="text-lg font-bold tabular-nums"
                 style={{ color: gap < 0 ? 'var(--color-danger)' : 'var(--color-success)' }}
@@ -204,7 +210,7 @@ export default function TaskDetailPage() {
               </div>
             </div>
             <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--color-bg)' }}>
-              <div className="text-xs mb-1" style={{ color: 'var(--color-text-secondary)' }}>필요 속도</div>
+              <div className="text-xs mb-1" style={{ color: 'var(--color-text-secondary)', cursor: 'help' }} title="남은 기간 내 100% 달성을 위해 하루에 필요한 진행률입니다.">필요 속도 ⓘ</div>
               <div className="text-lg font-bold tabular-nums" style={{ color: velColor }}>
                 {velocity > 100 ? '100+' : velocity}%/일
               </div>

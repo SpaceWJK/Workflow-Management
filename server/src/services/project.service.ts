@@ -10,11 +10,19 @@ export async function getProjects(options?: { page?: number; size?: number }) {
   const page = options?.page || 1;
   const size = options?.size || 20;
 
-  const [projects, total] = await Promise.all([
+  const [rawProjects, total] = await Promise.all([
     prisma.project.findMany({
       where: { isDeleted: false },
       include: {
-        _count: { select: { tasks: { where: { isDeleted: false } } } },
+        _count: {
+          select: {
+            tasks: { where: { isDeleted: false } },
+          },
+        },
+        tasks: {
+          where: { isDeleted: false },
+          select: { id: true, status: true, progressTotal: true },
+        },
         members: {
           include: {
             user: { select: { id: true, name: true, email: true } },
@@ -27,6 +35,18 @@ export async function getProjects(options?: { page?: number; size?: number }) {
     }),
     prisma.project.count({ where: { isDeleted: false } }),
   ]);
+
+  // 일감 통계 계산
+  const projects = rawProjects.map((p) => {
+    const taskCount = p.tasks.length;
+    const completedCount = p.tasks.filter((t) => t.status === 'DONE').length;
+    const inProgressCount = p.tasks.filter((t) => t.status === 'IN_PROGRESS').length;
+    const progressTotal = taskCount > 0
+      ? Math.round(p.tasks.reduce((sum, t) => sum + Number(t.progressTotal || 0), 0) / taskCount)
+      : 0;
+    const { tasks: _tasks, ...rest } = p;
+    return { ...rest, taskCount, completedCount, inProgressCount, progressTotal };
+  });
 
   return {
     projects,
@@ -45,13 +65,26 @@ export async function getProjectById(id: number) {
       },
       tasks: {
         where: { isDeleted: false },
-        select: { id: true, title: true, status: true, priority: true, progressTotal: true },
+        select: { id: true, title: true, status: true, priority: true, progressTotal: true, dueDate: true },
       },
     },
   });
 
   if (!project) throw new NotFoundError('Project');
-  return project;
+
+  // 통계 계산
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const taskCount = project.tasks.length;
+  const completedCount = project.tasks.filter((t) => t.status === 'DONE').length;
+  const delayedCount = project.tasks.filter((t) =>
+    t.status !== 'DONE' && t.status !== 'CANCELED' && t.dueDate && new Date(t.dueDate) < today
+  ).length;
+  const progressTotal = taskCount > 0
+    ? Math.round(project.tasks.reduce((sum, t) => sum + Number(t.progressTotal || 0), 0) / taskCount)
+    : 0;
+
+  return { ...project, taskCount, completedCount, delayedCount, progressTotal };
 }
 
 interface CreateProjectData {

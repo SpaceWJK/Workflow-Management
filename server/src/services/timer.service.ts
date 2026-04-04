@@ -72,20 +72,31 @@ export async function startTimer(taskId: number, userId: number) {
     throw new AppError(409, '이미 이 일감의 타이머가 진행 중입니다.');
   }
 
-  // 4. 해당 사용자의 다른 Task 진행 중 타이머 자동 정지
-  await stopActiveTimerForUser(userId);
+  // 4. 복수 타이머 허용 — 다른 Task 타이머 자동 정지 안 함
 
   // 5. 새 타이머 생성
   const log = await prisma.taskTimeLog.create({
     data: { taskId, userId },
   });
 
-  // 6. Task가 PENDING이면 IN_PROGRESS 자동 전환 (순환 방지: 직접 update)
+  // 6. Task가 PENDING이면 IN_PROGRESS 자동 전환 + 빌드 연동
   if (task.status === 'PENDING') {
     await prisma.task.update({
       where: { id: taskId },
       data: { status: 'IN_PROGRESS', version: { increment: 1 }, updatedAt: new Date() },
     });
+
+    // 연결 빌드 RECEIVED → TESTING 자동 전환
+    const buildLinks = await prisma.taskBuildLink.findMany({
+      where: { taskId, build: { isDeleted: false, status: 'RECEIVED' } },
+      include: { build: { select: { id: true } } },
+    });
+    for (const link of buildLinks) {
+      await prisma.build.update({
+        where: { id: link.build.id },
+        data: { status: 'TESTING', version: { increment: 1 }, updatedAt: new Date() },
+      });
+    }
   }
 
   emitTimerStarted(taskId, userId, log.id);

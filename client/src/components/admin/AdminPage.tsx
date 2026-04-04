@@ -88,7 +88,7 @@ export default function AdminPage() {
       ? currentIds.filter((id) => id !== projectId)
       : [...currentIds, projectId];
     setActionLoading(`project-${userId}`);
-    await api.patch(`/api/admin/users/${userId}/projects`, { projectIds: next });
+    await api.put(`/api/admin/users/${userId}/projects`, { projectIds: next });
     setActionLoading(null);
     queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
   };
@@ -276,8 +276,32 @@ export default function AdminPage() {
                     <td className="px-5 py-3 relative">
                       {projectEditId === u.id ? (
                         <div
-                          className="absolute z-10 left-0 top-0 mt-8 w-56 rounded-lg py-1 shadow-lg"
-                          style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+                          className="fixed z-50 w-56 rounded-lg py-1 shadow-lg"
+                          style={{
+                            backgroundColor: 'var(--color-surface)',
+                            border: '1px solid var(--color-border)',
+                            top: 'auto',
+                            bottom: 'auto',
+                            transform: 'translateY(-100%)',
+                            marginTop: '-8px',
+                          }}
+                          ref={(el) => {
+                            if (el) {
+                              const rect = el.parentElement?.getBoundingClientRect();
+                              if (rect) {
+                                const spaceBelow = window.innerHeight - rect.bottom;
+                                const spaceAbove = rect.top;
+                                el.style.left = `${rect.left}px`;
+                                if (spaceBelow < 250 && spaceAbove > 250) {
+                                  el.style.top = `${rect.top - 8}px`;
+                                  el.style.transform = 'translateY(-100%)';
+                                } else {
+                                  el.style.top = `${rect.bottom + 4}px`;
+                                  el.style.transform = 'none';
+                                }
+                              }
+                            }
+                          }}
                         >
                           <div className="px-3 py-2 text-xs font-semibold" style={{ color: 'var(--color-text-secondary)' }}>
                             담당 프로젝트 선택

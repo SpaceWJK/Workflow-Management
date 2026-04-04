@@ -68,7 +68,7 @@ export type LeaveStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED';
 
 export type BuildStatus = 'RECEIVED' | 'TESTING' | 'TEST_DONE' | 'APPROVED' | 'REJECTED' | 'RELEASED';
 
-export type BuildType = 'APP' | 'CDN';
+export type BuildType = 'APP' | 'CDN' | 'SERVER';
 
 export type Platform = 'iOS' | 'AOS' | 'PC';
 

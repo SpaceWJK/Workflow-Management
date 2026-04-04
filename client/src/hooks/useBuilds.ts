@@ -70,7 +70,7 @@ export function useUpdateTargets(projectId: number | undefined) {
     queryKey: ['builds', 'targets', projectId],
     queryFn: () => api.get<string[]>(`/api/builds/targets?projectId=${projectId}`),
     enabled: !!projectId,
-    select: (res) => res.data ?? [],
+    select: (res) => (res.data ?? []).map((d: string) => d.includes('T') ? d.split('T')[0] : d),
   });
 }
 

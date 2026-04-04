@@ -5,6 +5,7 @@ import { ArrowLeft, Save } from 'lucide-react';
 import TaskTestTypeRepeater from './TaskTestTypeRepeater';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { useTask, useCreateTask, useUpdateTask } from '../../hooks/useTasks';
+import { api } from '../../lib/api';
 import { useProjects } from '../../hooks/useProjects';
 import { useUpdateTargets, useBuildsByTarget, useLinkTasks } from '../../hooks/useBuilds';
 import { PRIORITY_MAP, TASK_STATUS_MAP, type Priority, type TaskStatus, type TaskTestType } from '../../types';
@@ -127,6 +128,15 @@ export default function TaskFormPage() {
     e.preventDefault();
     if (!validate()) return;
 
+    // testTypes에서 서버가 필요한 필드만 추출
+    const cleanTestTypes = form.testTypes
+      .filter((tt) => tt.testTypeCode)
+      .map((tt) => ({
+        testTypeCode: tt.testTypeCode!,
+        progress: Number(tt.progress || 0),
+        note: tt.note || '',
+      }));
+
     const payload = {
       title: form.title,
       description: form.description || undefined,
@@ -138,25 +148,53 @@ export default function TaskFormPage() {
       dueDate: form.dueDate,
       progressTotal,
       memo: form.memo || undefined,
-      testTypes: form.testTypes.length > 0 ? form.testTypes : undefined,
+      testTypes: cleanTestTypes.length > 0 ? cleanTestTypes : undefined,
     };
+
+    const taskId = isEdit ? Number(id) : null;
 
     if (isEdit) {
       const { status: _status, ...editPayload } = payload;
-      await updateTask.mutateAsync({ id: Number(id), ...editPayload, version: existingTask?.version ?? 0 });
+      await updateTask.mutateAsync({ id: taskId!, ...editPayload, version: existingTask?.version ?? 0 });
     } else {
       const result = await createTask.mutateAsync(payload);
-      // Link builds if selected
-      if (form.buildIds.length > 0 && result.data?.id) {
-        for (const buildId of form.buildIds) {
-          try {
-            await linkTasks.mutateAsync({ buildId, taskIds: [result.data.id] });
-          } catch {
-            // continue linking other builds
+      taskId !== null || (taskId as unknown as number);
+      if (result.data?.id) {
+        // Link builds
+        if (form.buildIds.length > 0) {
+          for (const buildId of form.buildIds) {
+            try {
+              await linkTasks.mutateAsync({ buildId, taskIds: [result.data.id] });
+            } catch { /* continue */ }
           }
         }
       }
     }
+
+    // 수정 모드에서도 빌드 연결 업데이트
+    if (isEdit && taskId) {
+      // 기존 연결 해제
+      const existingBuildIds = (existingTask?.buildLinks || [])
+        .map((bl: { buildId?: number; build?: { id: number } }) => bl.build?.id ?? bl.buildId)
+        .filter(Boolean) as number[];
+      // 제거할 빌드
+      for (const oldBuildId of existingBuildIds) {
+        if (!form.buildIds.includes(oldBuildId)) {
+          try {
+            await api.delete(`/api/builds/${oldBuildId}/tasks/${taskId}`);
+          } catch { /* continue */ }
+        }
+      }
+      // 추가할 빌드
+      for (const newBuildId of form.buildIds) {
+        if (!existingBuildIds.includes(newBuildId)) {
+          try {
+            await linkTasks.mutateAsync({ buildId: newBuildId, taskIds: [taskId] });
+          } catch { /* continue */ }
+        }
+      }
+    }
+
     navigate('/tasks');
   };
 
@@ -341,15 +379,10 @@ export default function TaskFormPage() {
                     {targetBuilds.map((b) => (
                       <label key={b.id} className="flex items-center gap-2 text-sm cursor-pointer">
                         <input
-                          type="checkbox"
+                          type="radio"
+                          name="buildSelect"
                           checked={form.buildIds.includes(b.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setField('buildIds', [...form.buildIds, b.id]);
-                            } else {
-                              setField('buildIds', form.buildIds.filter((bid) => bid !== b.id));
-                            }
-                          }}
+                          onChange={() => setField('buildIds', [b.id])}
                         />
                         <span>{b.buildOrder}차 빌드</span>
                         {b.buildVersions && b.buildVersions.length > 0 && (

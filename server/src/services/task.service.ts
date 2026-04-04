@@ -38,8 +38,8 @@ export async function getTasks(options: GetTasksOptions) {
 
   const where: Record<string, unknown> = { isDeleted: false };
 
-  if (projectId) where.projectId = projectId;
-  if (assigneeId) where.assigneeId = assigneeId;
+  if (projectId) where.projectId = Number(projectId);
+  if (assigneeId) where.assigneeId = Number(assigneeId);
   if (status) where.status = status;
   if (priority) where.priority = priority;
 

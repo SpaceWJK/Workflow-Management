@@ -75,8 +75,8 @@ const createBuildSchema = {
     status: z.enum(['RECEIVED', 'TESTING', 'TEST_DONE', 'APPROVED', 'REJECTED', 'RELEASED']).optional(),
     memo: z.string().optional(),
     versions: z.array(z.object({
-      buildType: z.enum(['APP', 'CDN']),
-      platform: z.enum(['iOS', 'AOS', 'PC']).optional(),
+      buildType: z.enum(['APP', 'CDN', 'SERVER']),
+      platform: z.string().max(20).optional(),  // 복수 선택: "iOS,AOS,PC"
       cdnType: z.string().max(100).optional(),
       version: z.string().min(1).max(100),
       note: z.string().optional(),
@@ -157,8 +157,8 @@ router.patch('/:id/status', authorize('ADMIN', 'MANAGER', 'MEMBER'), validate(ch
 // --- POST /api/builds/:id/versions ---
 const addVersionSchema = {
   body: z.object({
-    buildType: z.enum(['APP', 'CDN']),
-    platform: z.enum(['iOS', 'AOS', 'PC']).optional(),
+    buildType: z.enum(['APP', 'CDN', 'SERVER']),
+    platform: z.string().max(20).optional(),
     cdnType: z.string().max(100).optional(),
     version: z.string().min(1).max(100),
     note: z.string().optional(),
@@ -177,8 +177,8 @@ router.post('/:id/versions', authorize('ADMIN', 'MANAGER'), validate(addVersionS
 // --- PUT /api/builds/:id/versions/:vid ---
 const updateVersionSchema = {
   body: z.object({
-    buildType: z.enum(['APP', 'CDN']).optional(),
-    platform: z.enum(['iOS', 'AOS', 'PC']).optional(),
+    buildType: z.enum(['APP', 'CDN', 'SERVER']).optional(),
+    platform: z.string().max(20).optional(),
     cdnType: z.string().max(100).optional(),
     version: z.string().min(1).max(100).optional(),
     note: z.string().optional(),

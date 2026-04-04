@@ -9,7 +9,7 @@ import type { BuildVersion } from '../../types';
 import dayjs from 'dayjs';
 
 interface VersionRow {
-  buildType: 'APP' | 'CDN';
+  buildType: 'APP' | 'CDN' | 'SERVER';
   platform: string;
   cdnType: string;
   version: string;
@@ -316,9 +316,19 @@ export default function BuildFormPage() {
                   />
                   CDN
                 </label>
+                <label className="flex items-center gap-1.5 text-sm cursor-pointer">
+                  <input
+                    type="radio"
+                    name={`buildType_${idx}`}
+                    value="SERVER"
+                    checked={ver.buildType === 'SERVER'}
+                    onChange={() => setVersionField(idx, 'buildType', 'SERVER')}
+                  />
+                  Server
+                </label>
               </div>
 
-              {/* Conditional: Platform or CDN type */}
+              {/* Conditional: Platform or CDN type or Server */}
               <div className="grid grid-cols-3 gap-3">
                 {ver.buildType === 'APP' ? (
                   <div className="flex flex-col gap-1">
@@ -346,7 +356,7 @@ export default function BuildFormPage() {
                       })}
                     </div>
                   </div>
-                ) : (
+                ) : ver.buildType === 'CDN' ? (
                   <div className="flex flex-col gap-1">
                     <label className="text-xs font-medium" style={{ color: 'var(--color-text-secondary)' }}>CDN 종류</label>
                     <input
@@ -362,6 +372,17 @@ export default function BuildFormPage() {
                         <option key={ct} value={ct} />
                       ))}
                     </datalist>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium" style={{ color: 'var(--color-text-secondary)' }}>서버 종류</label>
+                    <input
+                      value={ver.cdnType}
+                      onChange={(e) => setVersionField(idx, 'cdnType', e.target.value)}
+                      className={inputClass}
+                      style={inputStyle}
+                      placeholder="게임서버, 로비서버, 매치서버..."
+                    />
                   </div>
                 )}
 

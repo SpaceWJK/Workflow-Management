@@ -16,8 +16,8 @@ const router = Router();
 // Rate limiters
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15분
-  max: 5,                    // IP당 5회
-  message: { success: false, message: 'Too many login attempts. Please try again after 15 minutes.' },
+  max: 30,                   // IP당 30회 (dev 환경에서 프록시 공유 고려)
+  message: { success: false, message: '로그인 요청이 너무 많습니다. 15분 후 다시 시도해주세요.' },
   standardHeaders: true,
   legacyHeaders: false,
 });

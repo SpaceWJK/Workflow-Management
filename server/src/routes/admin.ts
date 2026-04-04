@@ -37,6 +37,9 @@ router.get('/users', async (_req: AuthenticatedRequest, res: Response, next: Nex
         teamStatus: true,
         isActive: true,
         createdAt: true,
+        projectMembers: {
+          select: { projectId: true },
+        },
         _count: {
           select: {
             assignedTasks: { where: { isDeleted: false, status: { notIn: ['DONE', 'CANCELED'] } } },
@@ -45,7 +48,13 @@ router.get('/users', async (_req: AuthenticatedRequest, res: Response, next: Nex
       },
       orderBy: [{ isActive: 'asc' }, { createdAt: 'desc' }],
     });
-    res.json({ success: true, data: users });
+    // projectMembers → projectIds 변환
+    const result = users.map((u) => ({
+      ...u,
+      projectIds: u.projectMembers.map((pm) => pm.projectId),
+      projectMembers: undefined,
+    }));
+    res.json({ success: true, data: result });
   } catch (err) {
     next(err);
   }

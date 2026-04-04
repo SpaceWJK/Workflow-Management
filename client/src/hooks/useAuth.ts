@@ -10,22 +10,26 @@ export function useAuth() {
   const navigate = useNavigate();
 
   const login = useCallback(async (name: string, password: string) => {
-    const res = await api.post<{ user: User; token: string; refreshToken: string }>(
-      '/api/auth/login',
-      { name, password }
-    );
-    if (res.success) {
-      storeLogin(res.data.user, res.data.token, res.data.refreshToken);
-      navigate('/');
-      return { success: true };
+    try {
+      const res = await api.post<{ user: User; token: string; refreshToken: string }>(
+        '/api/auth/login',
+        { name, password }
+      );
+      if (res.success) {
+        storeLogin(res.data.user, res.data.token, res.data.refreshToken);
+        navigate('/');
+        return { success: true };
+      }
+      return { success: false, message: res.message || '로그인에 실패했습니다.' };
+    } catch {
+      return { success: false, message: '서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.' };
     }
-    return { success: false, message: res.message || '로그인에 실패했습니다.' };
   }, [storeLogin, navigate]);
 
   const logout = useCallback(() => {
     disconnectSocket();
     storeLogout();
-    navigate('/login');
+    navigate('/login', { replace: true });
   }, [storeLogout, navigate]);
 
   return { user, isAuthenticated, login, logout };
