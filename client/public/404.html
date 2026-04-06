@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>Workflow Management</title>
+  <script>
+    // GitHub Pages SPA 라우팅 폴백
+    // 사용자가 /Workflow-Management/login 같은 경로로 직접 접속 시
+    // 404.html이 서빙되므로, 여기서 index.html로 리다이렉트하며 경로를 query string으로 보존
+    (function() {
+      var segmentCount = 1; // /Workflow-Management/ = 1 segment
+      var l = window.location;
+      l.replace(
+        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+        l.pathname.split('/').slice(0, 1 + segmentCount).join('/') + '/?/' +
+        l.pathname.slice(1).split('/').slice(segmentCount).join('/').replace(/&/g, '~and~') +
+        (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+        l.hash
+      );
+    })();
+  </script>
+</head>
+<body></body>
+</html>
