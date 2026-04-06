@@ -247,3 +247,65 @@ export const CALENDAR_EVENT_TYPE_MAP: Record<CalendarEventType, { label: string;
   MEETING: { label: '회의', color: 'var(--color-info)' },
   OTHER: { label: '기타', color: 'var(--color-text-secondary)' },
 };
+
+// ===== Attendance =====
+export type AttendanceStatus = 'PRESENT' | 'LATE' | 'EARLY_LEAVE' | 'ABSENT' | 'HALF_DAY' | 'REMOTE' | 'BUSINESS_TRIP';
+
+export const ATTENDANCE_STATUS_MAP: Record<AttendanceStatus, { label: string; color: string }> = {
+  PRESENT: { label: '정상', color: 'var(--color-success)' },
+  LATE: { label: '지각', color: 'var(--color-warning)' },
+  EARLY_LEAVE: { label: '조퇴', color: '#f97316' },
+  ABSENT: { label: '결근', color: 'var(--color-danger)' },
+  HALF_DAY: { label: '반차', color: '#60a5fa' },
+  REMOTE: { label: '재택', color: 'var(--color-primary)' },
+  BUSINESS_TRIP: { label: '출장', color: '#a855f7' },
+};
+
+export interface AttendanceRecord {
+  userId: number;
+  name: string;
+  team: string | null;
+  avatarUrl: string | null;
+  clockIn: string | null;
+  clockOut: string | null;
+  duration: number | null;
+  status: AttendanceStatus | 'ABSENT';
+}
+
+export interface DailyAttendance {
+  date: string;
+  summary: { total: number; present: number; absent: number; late: number; remote: number };
+  records: AttendanceRecord[];
+}
+
+export interface MonthlyMember {
+  userId: number;
+  name: string;
+  team: string | null;
+  avatarUrl: string | null;
+  presentDays: number;
+  lateDays: number;
+  absentDays: number;
+  totalSeconds: number;
+  avgSecondsPerDay: number;
+}
+
+export interface MonthlyAttendance {
+  year: number;
+  month: number;
+  workingDays: number;
+  members: MonthlyMember[];
+}
+
+export interface AttendanceClockResponse {
+  attendance: {
+    id: number;
+    userId: number;
+    date: string;
+    clockIn: string | null;
+    clockOut: string | null;
+    duration: number | null;
+    status: string;
+  };
+  teamStatus: TeamStatus;
+}

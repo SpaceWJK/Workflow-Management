@@ -87,12 +87,62 @@ router.delete('/users/:id/reject', async (req: AuthenticatedRequest, res: Respon
     if (!user) throw new NotFoundError('User');
     if (user.isActive) throw new AppError(400, '활성 사용자는 거절할 수 없습니다. 비활성화를 사용해주세요.');
 
-    await prisma.user.delete({ where: { id } });
+    await deleteUserCascade(id);
     res.json({ success: true, message: '가입 요청이 거절되었습니다.' });
   } catch (err) {
     next(err);
   }
 });
+
+// --- DELETE /api/admin/users/:id — 회원 삭제 (활성/비활성 불문) ---
+router.delete('/users/:id', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const id = parseId(req.params.id as string);
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) throw new NotFoundError('User');
+
+    if (req.user!.userId === id) {
+      throw new AppError(400, '자신의 계정은 삭제할 수 없습니다.');
+    }
+
+    await deleteUserCascade(id);
+    res.json({ success: true, message: `${user.name} 계정이 삭제되었습니다.` });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** 사용자 삭제 — FK 참조를 정리한 뒤 삭제 */
+async function deleteUserCascade(userId: number) {
+  await prisma.$transaction([
+    // 할당된 일감 → 할당자 해제
+    prisma.task.updateMany({ where: { assigneeId: userId }, data: { assigneeId: null, assigneeName: null } }),
+    prisma.task.updateMany({ where: { createdBy: userId }, data: { createdBy: null } }),
+    // 프로젝트 멤버십 제거
+    prisma.projectMember.deleteMany({ where: { userId } }),
+    // 타이머 로그 삭제
+    prisma.taskTimeLog.deleteMany({ where: { userId } }),
+    // 진행률 로그 → changedBy 해제
+    prisma.taskProgressLog.updateMany({ where: { changedBy: userId }, data: { changedBy: null } }),
+    // 알림 삭제
+    prisma.notification.deleteMany({ where: { userId } }),
+    // 부재/휴가 삭제
+    prisma.leave.deleteMany({ where: { userId } }),
+    prisma.leave.updateMany({ where: { approvedBy: userId }, data: { approvedBy: null } }),
+    // 활동 로그 → changedBy 해제
+    prisma.activityLog.updateMany({ where: { changedBy: userId }, data: { changedBy: null } }),
+    // 이슈 → assigneeId 해제
+    prisma.issue.updateMany({ where: { assigneeId: userId }, data: { assigneeId: null } }),
+    // 캘린더 이벤트 삭제
+    prisma.calendarEvent.deleteMany({ where: { userId } }),
+    // 근태 기록 삭제
+    prisma.attendanceLog.deleteMany({ where: { userId } }),
+    // 프로젝트 → createdBy 해제
+    prisma.project.updateMany({ where: { createdBy: userId }, data: { createdBy: null } }),
+    // 사용자 삭제
+    prisma.user.delete({ where: { id: userId } }),
+  ]);
+}
 
 // --- PATCH /api/admin/users/:id/role — 역할 변경 ---
 const roleSchema = {

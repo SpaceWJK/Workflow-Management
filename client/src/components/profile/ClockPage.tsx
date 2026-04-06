@@ -1,15 +1,20 @@
 import { motion } from 'framer-motion';
-import { Clock, LogIn, LogOut, Loader2 } from 'lucide-react';
+import { LogIn, LogOut, Loader2 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
-import { useClockInOut } from '../../hooks/useProfile';
+import { useAttendanceClock, useMyTodayAttendance } from '../../hooks/useAttendance';
 import { TEAM_STATUS_MAP } from '../../types';
+import { formatTimeKST, formatDuration } from '../../lib/utils';
 import StatusBadge from '../common/StatusBadge';
 
 export default function ClockPage() {
   const user = useAuthStore((s) => s.user);
-  const clockInOut = useClockInOut();
-  const isClockIn = user?.teamStatus !== 'OFF_WORK';
+  const clockInOut = useAttendanceClock();
+  const { data: today } = useMyTodayAttendance();
   const statusMeta = user ? TEAM_STATUS_MAP[user.teamStatus] : null;
+
+  // 출근 상태 판단: AttendanceLog 기반 (teamStatus가 아닌 실제 기록)
+  const isClockedIn = today?.hasClockedIn && !today?.hasClockedOut;
+  const isClockedOut = today?.hasClockedIn && today?.hasClockedOut;
 
   return (
     <motion.div
@@ -33,7 +38,7 @@ export default function ClockPage() {
               border: `3px solid ${statusMeta?.color || 'var(--color-text-secondary)'}`,
             }}
           >
-            {isClockIn ? '👨‍💻' : '🌙'}
+            {isClockedIn ? '👨‍💻' : isClockedOut ? '🏠' : '🌙'}
           </div>
           <div className="flex items-center gap-2 mt-2">
             {user && <StatusBadge status={user.teamStatus} />}
@@ -41,8 +46,30 @@ export default function ClockPage() {
           </div>
         </div>
 
+        {/* 오늘 출퇴근 정보 */}
+        {today?.hasClockedIn && (
+          <div className="flex items-center gap-6 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+            <div className="flex flex-col items-center gap-0.5">
+              <span className="text-xs">출근</span>
+              <span className="font-medium" style={{ color: 'var(--color-text)' }}>{formatTimeKST(today.clockIn)}</span>
+            </div>
+            {today.clockOut && (
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="text-xs">퇴근</span>
+                <span className="font-medium" style={{ color: 'var(--color-text)' }}>{formatTimeKST(today.clockOut)}</span>
+              </div>
+            )}
+            {today.duration != null && (
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="text-xs">근무시간</span>
+                <span className="font-medium" style={{ color: 'var(--color-primary)' }}>{formatDuration(today.duration)}</span>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* 출퇴근 버튼 */}
-        {isClockIn ? (
+        {isClockedIn ? (
           <button
             onClick={() => clockInOut.mutate('OUT')}
             disabled={clockInOut.isPending}
@@ -64,14 +91,16 @@ export default function ClockPage() {
             style={{ backgroundColor: 'var(--color-success)' }}
           >
             {clockInOut.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn className="w-5 h-5" />}
-            출근하기
+            {isClockedOut ? '재출근하기' : '출근하기'}
           </button>
         )}
 
         <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
-          {isClockIn
+          {isClockedIn
             ? '퇴근 버튼을 누르면 상태가 "퇴근"으로 변경됩니다.'
-            : '출근 버튼을 누르면 상태가 "근무중"으로 변경됩니다.'
+            : isClockedOut
+              ? '재출근 버튼을 누르면 다시 "근무중"으로 변경됩니다.'
+              : '출근 버튼을 누르면 상태가 "근무중"으로 변경됩니다.'
           }
         </p>
       </section>

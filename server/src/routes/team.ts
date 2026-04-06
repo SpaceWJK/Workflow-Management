@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { validate } from '../middleware/validate.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 import * as teamService from '../services/team.service.js';
+import * as attendanceService from '../services/attendance.service.js';
 import type { AuthenticatedRequest } from '../types/index.js';
 
 const router = Router();
@@ -70,10 +71,17 @@ const clockSchema = {
 
 router.post('/me/clock', validate(clockSchema), async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const { action } = req.body;
-    const newStatus = action === 'IN' ? 'AVAILABLE' : 'OFF_WORK';
-    const result = await teamService.updateMemberStatus(req.user!.userId, newStatus);
-    res.json({ success: true, data: { ...result, clockedAt: new Date().toISOString() } });
+    const result = await attendanceService.clockInOut(req.user!.userId, req.body.action);
+    // 기존 응답 shape 유지 (하위호환)
+    res.json({
+      success: true,
+      data: {
+        id: result.attendance.userId,
+        name: '',
+        teamStatus: result.teamStatus,
+        clockedAt: (result.attendance.clockIn || result.attendance.clockOut || new Date()).toISOString(),
+      },
+    });
   } catch (err) {
     next(err);
   }

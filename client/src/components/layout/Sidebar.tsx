@@ -6,6 +6,7 @@ import {
   Package,
   Calendar,
   Users,
+  ClipboardCheck,
   Settings,
   Shield,
   ChevronLeft,
@@ -23,6 +24,7 @@ const NAV_ITEMS = [
   { to: '/projects', icon: FolderKanban, label: '프로젝트' },
   { to: '/calendar', icon: Calendar, label: '캘린더' },
   { to: '/team', icon: Users, label: '팀원 현황' },
+  { to: '/attendance', icon: ClipboardCheck, label: '근태 관리' },
   { to: '/settings', icon: Settings, label: '설정' },
 ];
 

@@ -1,13 +1,14 @@
-import { TASK_STATUS_MAP, type TaskStatus } from '../../types';
+import { TASK_STATUS_MAP, TEAM_STATUS_MAP, type TaskStatus, type TeamStatus } from '../../types';
 import { cn } from '../../lib/utils';
 
 interface StatusBadgeProps {
-  status: TaskStatus;
+  status: TaskStatus | TeamStatus;
   className?: string;
 }
 
 export default function StatusBadge({ status, className }: StatusBadgeProps) {
-  const meta = TASK_STATUS_MAP[status];
+  const meta = (TASK_STATUS_MAP as Record<string, { label: string; color: string }>)[status]
+    ?? (TEAM_STATUS_MAP as Record<string, { label: string; color: string }>)[status];
   if (!meta) return <span>{status}</span>;
 
   return (

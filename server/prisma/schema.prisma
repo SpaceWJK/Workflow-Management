@@ -38,6 +38,7 @@ model User {
   progressLogs    TaskProgressLog[]
   timeLogs        TaskTimeLog[]      @relation("TaskTimeLogs")
   calendarEvents  CalendarEvent[]    @relation("CalendarEvents")
+  attendanceLogs  AttendanceLog[]
 
   @@map("users")
 }
@@ -446,4 +447,26 @@ model CalendarEvent {
   @@index([userId])
   @@index([startDate, endDate])
   @@map("calendar_events")
+}
+
+// ─────────────────────────────────────────────
+// AttendanceLog (출퇴근 기록)
+// ─────────────────────────────────────────────
+model AttendanceLog {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("user_id")
+  date      DateTime  @db.Date
+  clockIn   DateTime? @map("clock_in")
+  clockOut  DateTime? @map("clock_out")
+  duration  Int?      // 초 단위
+  status    String    @default("PRESENT") @db.VarChar(30)
+  memo      String?   @db.VarChar(255)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, date])
+  @@index([date])
+  @@map("attendance_logs")
 }

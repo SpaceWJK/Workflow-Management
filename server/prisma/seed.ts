@@ -70,9 +70,6 @@ async function main() {
 
   const members = [
     { name: '김팀장', email: 'kim@qa.com',  role: 'QA_MANAGER', teamStatus: 'AVAILABLE' },
-    { name: '이검증', email: 'lee@qa.com',  role: 'QA_MEMBER',  teamStatus: 'AVAILABLE' },
-    { name: '박테스', email: 'park@qa.com', role: 'QA_MEMBER',  teamStatus: 'AVAILABLE' },
-    { name: '최분석', email: 'choi@qa.com', role: 'QA_MEMBER',  teamStatus: 'AVAILABLE' },
   ];
 
   for (const m of members) {

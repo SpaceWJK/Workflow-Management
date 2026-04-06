@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Shield, UserCheck, UserX, ChevronDown, KeyRound, Loader2 } from 'lucide-react';
+import { Shield, UserCheck, UserX, ChevronDown, KeyRound, Loader2, Trash2 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useProjects } from '../../hooks/useProjects';
 import { formatDate } from '../../lib/utils';
@@ -66,6 +66,7 @@ export default function AdminPage() {
       if (action === 'role') return api.patch(`/api/admin/users/${id}/role`, body);
       if (action === 'deactivate') return api.patch(`/api/admin/users/${id}/deactivate`, {});
       if (action === 'reset-password') return api.patch(`/api/admin/users/${id}/reset-password`, body);
+      if (action === 'delete') return api.delete(`/api/admin/users/${id}`);
       return { success: false };
     },
     onSettled: () => {
@@ -373,6 +374,18 @@ export default function AdminPage() {
                           title="비활성화"
                         >
                           <UserX className="w-3.5 h-3.5" style={{ color: 'var(--color-danger)' }} />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm(`'${u.name}' 계정을 완전히 삭제하시겠습니까?\n할당된 일감은 미할당 상태로 변경됩니다.\n이 작업은 되돌릴 수 없습니다.`)) {
+                              mutate.mutate({ action: 'delete', id: u.id });
+                            }
+                          }}
+                          disabled={actionLoading === `delete-${u.id}`}
+                          className="p-1.5 rounded-md hover:bg-[var(--color-surface-hover)] transition-colors"
+                          title="계정 삭제"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" style={{ color: 'var(--color-danger)' }} />
                         </button>
                       </div>
                     </td>

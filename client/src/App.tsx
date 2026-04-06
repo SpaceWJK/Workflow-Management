@@ -25,6 +25,7 @@ import StatusPage from './components/profile/StatusPage';
 import ClockPage from './components/profile/ClockPage';
 import TodayTasksPage from './components/profile/TodayTasksPage';
 import PasswordPage from './components/profile/PasswordPage';
+import AttendancePage from './components/attendance/AttendancePage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -84,6 +85,7 @@ function AppInner() {
               <Route path="/team" element={<TeamPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/admin" element={<AdminPage />} />
+              <Route path="/attendance" element={<AttendancePage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/profile/status" element={<StatusPage />} />
               <Route path="/profile/clock" element={<ClockPage />} />

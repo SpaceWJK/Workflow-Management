@@ -52,6 +52,31 @@ export function getVelocityColor(velocity: number): string {
   return 'var(--color-danger)';
 }
 
+/** Format seconds to "Xh Ym" or "Xm" */
+export function formatDuration(seconds: number | null | undefined): string {
+  if (!seconds || seconds <= 0) return '-';
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  if (h === 0) return `${m}분`;
+  if (m === 0) return `${h}시간`;
+  return `${h}시간 ${m}분`;
+}
+
+/** Format seconds to "HH:MM" */
+export function formatDurationHHMM(seconds: number | null | undefined): string {
+  if (!seconds || seconds <= 0) return '00:00';
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+/** Format ISO datetime to HH:MM (KST) */
+export function formatTimeKST(isoStr: string | null | undefined): string {
+  if (!isoStr) return '-';
+  const d = new Date(isoStr);
+  return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Seoul' });
+}
+
 /** Generate initials from name */
 export function getInitials(name: string): string {
   return name
