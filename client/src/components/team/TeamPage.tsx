@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import dayjs from 'dayjs';
+import { Building2 } from 'lucide-react';
 import { useTeam } from '../../hooks/useTeam';
 import { useTasks } from '../../hooks/useTasks';
 import TeamMemberCard from './TeamMemberCard';
@@ -13,6 +14,7 @@ import EmptyState from '../common/EmptyState';
 import { TEAM_STATUS_MAP, type TeamStatus, type User } from '../../types';
 
 export default function TeamPage() {
+  const navigate = useNavigate();
   const { data: members = [], isLoading: teamLoading } = useTeam();
   const { data: tasks = [], isLoading: tasksLoading } = useTasks();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -108,6 +110,29 @@ export default function TeamPage() {
           </select>
         )}
       </div>
+
+      {/* Pixel Office 진입 버튼 */}
+      <button
+        onClick={() => navigate('/team/pixel-office')}
+        className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium cursor-pointer transition-all hover:opacity-90 self-start"
+        style={{
+          backgroundColor: 'color-mix(in srgb, var(--color-primary) 12%, var(--color-surface))',
+          border: '1px solid color-mix(in srgb, var(--color-primary) 25%, var(--color-border))',
+          color: 'var(--color-primary)',
+        }}
+      >
+        <Building2 className="w-4 h-4" />
+        Pixel Office
+        <span
+          className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
+          style={{
+            backgroundColor: 'color-mix(in srgb, var(--color-success) 20%, transparent)',
+            color: 'var(--color-success)',
+          }}
+        >
+          {members.filter((m) => ['AVAILABLE', 'IN_MEETING', 'HALF_DAY', 'REMOTE'].includes(m.teamStatus)).length}명 근무중
+        </span>
+      </button>
 
       {/* Status board + Workload */}
       <div className="grid grid-cols-3 gap-4">

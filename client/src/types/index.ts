@@ -297,6 +297,35 @@ export interface MonthlyAttendance {
   members: MonthlyMember[];
 }
 
+// ===== Meeting Room =====
+export interface MeetingRoom {
+  id: number;
+  title: string;
+  isPrivate: boolean;
+  createdBy: number;
+  creatorName: string;
+  participantCount: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface ChatMessage {
+  id: number;
+  roomId: number;
+  userId: number;
+  userName: string;
+  userRole: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface MeetingParticipant {
+  id: number;
+  name: string;
+  role: string;
+  avatarUrl: string | null;
+}
+
 export interface AttendanceClockResponse {
   attendance: {
     id: number;

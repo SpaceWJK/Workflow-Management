@@ -39,6 +39,9 @@ model User {
   timeLogs        TaskTimeLog[]      @relation("TaskTimeLogs")
   calendarEvents  CalendarEvent[]    @relation("CalendarEvents")
   attendanceLogs  AttendanceLog[]
+  meetingRoomsCreated  MeetingRoom[]         @relation("MeetingRoomCreator")
+  meetingParticipants  MeetingParticipant[]  @relation("MeetingParticipants")
+  meetingMessages      MeetingMessage[]      @relation("MeetingMessages")
 
   @@map("users")
 }
@@ -469,4 +472,60 @@ model AttendanceLog {
   @@unique([userId, date])
   @@index([date])
   @@map("attendance_logs")
+}
+
+// ─────────────────────────────────────────────
+// MeetingRoom (실시간 회의실)
+// ─────────────────────────────────────────────
+model MeetingRoom {
+  id           Int       @id @default(autoincrement())
+  title        String    @db.VarChar(100)
+  isPrivate    Boolean   @default(false) @map("is_private")
+  passwordHash String?   @map("password_hash") @db.VarChar(255)
+  createdBy    Int       @map("created_by")
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  creator      User                 @relation("MeetingRoomCreator", fields: [createdBy], references: [id])
+  participants MeetingParticipant[]
+  messages     MeetingMessage[]
+
+  @@index([isActive])
+  @@map("meeting_rooms")
+}
+
+// ─────────────────────────────────────────────
+// MeetingParticipant (회의실 참여자)
+// ─────────────────────────────────────────────
+model MeetingParticipant {
+  id             Int      @id @default(autoincrement())
+  roomId         Int      @map("room_id")
+  userId         Int      @map("user_id")
+  previousStatus String?  @map("previous_status") @db.VarChar(50)
+  joinedAt       DateTime @default(now()) @map("joined_at")
+
+  room MeetingRoom @relation(fields: [roomId], references: [id])
+  user User        @relation("MeetingParticipants", fields: [userId], references: [id])
+
+  @@unique([roomId, userId])
+  @@index([userId])
+  @@map("meeting_participants")
+}
+
+// ─────────────────────────────────────────────
+// MeetingMessage (회의실 채팅 메시지)
+// ─────────────────────────────────────────────
+model MeetingMessage {
+  id        Int      @id @default(autoincrement())
+  roomId    Int      @map("room_id")
+  userId    Int      @map("user_id")
+  content   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  room MeetingRoom @relation(fields: [roomId], references: [id])
+  user User        @relation("MeetingMessages", fields: [userId], references: [id])
+
+  @@index([roomId, createdAt])
+  @@map("meeting_messages")
 }

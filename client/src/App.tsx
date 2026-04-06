@@ -15,6 +15,7 @@ import ProjectListPage from './components/projects/ProjectListPage';
 import ProjectDetailPage from './components/projects/ProjectDetailPage';
 import CalendarPage from './components/calendar/CalendarPage';
 import TeamPage from './components/team/TeamPage';
+import PixelOfficePage from './components/team/PixelOfficePage';
 import SettingsPage from './components/settings/SettingsPage';
 import AdminPage from './components/admin/AdminPage';
 import BuildListPage from './components/builds/BuildListPage';
@@ -83,6 +84,7 @@ function AppInner() {
               <Route path="/builds/:id/edit" element={<BuildFormPage />} />
               <Route path="/calendar" element={<CalendarPage />} />
               <Route path="/team" element={<TeamPage />} />
+              <Route path="/team/pixel-office" element={<PixelOfficePage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/attendance" element={<AttendancePage />} />

@@ -20,6 +20,7 @@ import adminRoutes from './routes/admin.js';
 import buildRoutes from './routes/builds.js';
 import timerRoutes from './routes/timer.js';
 import attendanceRoutes from './routes/attendance.js';
+import meetingRoomRoutes from './routes/meeting-rooms.js';
 import { globalErrorHandler, notFoundHandler } from './middleware/error.js';
 
 export function createApp() {
@@ -87,6 +88,7 @@ export function createApp() {
   app.use('/api/admin', adminRoutes);
   app.use('/api/builds', buildRoutes);
   app.use('/api/attendance', attendanceRoutes);
+  app.use('/api/meeting-rooms', meetingRoomRoutes);
 
   // --- 404 + 글로벌 에러 핸들러 ---
   app.use(notFoundHandler);

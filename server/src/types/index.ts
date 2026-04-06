@@ -120,6 +120,27 @@ export interface TaskFilterParams {
 
 // --- Socket 이벤트 ---
 
+export interface MeetingRoomInfo {
+  id: number;
+  title: string;
+  isPrivate: boolean;
+  createdBy: number;
+  creatorName: string;
+  participantCount: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface ChatMessage {
+  id: number;
+  roomId: number;
+  userId: number;
+  userName: string;
+  userRole: string;
+  content: string;
+  createdAt: string;
+}
+
 export interface ServerToClientEvents {
   'task:created': (data: { task: unknown }) => void;
   'task:updated': (data: { task: unknown }) => void;
@@ -138,11 +159,20 @@ export interface ServerToClientEvents {
   'calendar:eventCreated': (data: { event: unknown }) => void;
   'calendar:eventUpdated': (data: { event: unknown }) => void;
   'calendar:eventDeleted': (data: { eventId: number }) => void;
+  'meeting:created': (data: { room: MeetingRoomInfo }) => void;
+  'meeting:closed': (data: { roomId: number }) => void;
+  'meeting:joined': (data: { roomId: number; user: { id: number; name: string } }) => void;
+  'meeting:left': (data: { roomId: number; userId: number }) => void;
+  'meeting:message': (data: { roomId: number; message: ChatMessage }) => void;
+  'meeting:invited': (data: { roomId: number; roomTitle: string; invitedBy: string }) => void;
 }
 
 export interface ClientToServerEvents {
   'join:project': (projectId: string) => void;
   'leave:project': (projectId: string) => void;
+  'meeting:join': (roomId: number) => void;
+  'meeting:leave': (roomId: number) => void;
+  'meeting:sendMessage': (data: { roomId: number; content: string }) => void;
 }
 
 // --- Error ---

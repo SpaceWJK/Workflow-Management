@@ -70,6 +70,20 @@ export function useSocket() {
       queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
     });
 
+    // Meeting events
+    socket.on('meeting:created' as string, () => {
+      queryClient.invalidateQueries({ queryKey: ['meeting-rooms'] });
+    });
+    socket.on('meeting:closed' as string, () => {
+      queryClient.invalidateQueries({ queryKey: ['meeting-rooms'] });
+    });
+    socket.on('meeting:joined' as string, () => {
+      queryClient.invalidateQueries({ queryKey: ['meeting-rooms'] });
+    });
+    socket.on('meeting:left' as string, () => {
+      queryClient.invalidateQueries({ queryKey: ['meeting-rooms'] });
+    });
+
     // Build events
     socket.on('build:created', () => {
       queryClient.invalidateQueries({ queryKey: ['builds'] });
@@ -109,6 +123,10 @@ export function useSocket() {
       socket.off('build:updated');
       socket.off('build:deleted');
       socket.off('build:statusChanged');
+      socket.off('meeting:created');
+      socket.off('meeting:closed');
+      socket.off('meeting:joined');
+      socket.off('meeting:left');
     };
   }, [isAuthenticated, queryClient]);
 
